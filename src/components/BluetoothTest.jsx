@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { connectToMachine, MACHINE_TYPES } from '../lib/bluetooth';
 import { supabase } from '../lib/supabase';
+import { machineName } from '../lib/utils';
+import Footer from './Footer';
 
 const INITIAL_METRICS = {
   watts: null,
@@ -200,7 +202,6 @@ export default function BluetoothTest({ athlete, onLogout, onWorkoutDone }) {
   const isConnecting = status === 'connecting';
   const isReconnecting = status === 'reconnecting';
   const isEchoBike = activeMachine === MACHINE_TYPES.ECHO_BIKE;
-  const machineName = activeMachine === MACHINE_TYPES.SKI_ERG ? 'Ski Erg' : 'Echo Bike';
 
   // Cadence field differs by machine
   const cadenceLabel = isEchoBike ? 'Cadence' : 'Stroke Rate';
@@ -271,7 +272,7 @@ export default function BluetoothTest({ athlete, onLogout, onWorkoutDone }) {
             }`}
           />
           {isConnected
-            ? `${machineName} — ${deviceName}`
+            ? `${machineName(activeMachine)} — ${deviceName}`
             : isReconnecting
               ? 'Reconnecting…'
               : isConnecting
@@ -357,7 +358,7 @@ export default function BluetoothTest({ athlete, onLogout, onWorkoutDone }) {
       )}
 
       {/* ── Version indicator ── */}
-      <span className="fixed bottom-2 right-3 text-xs text-gray-600 select-none">v0.1.5</span>
+      <Footer />
     </div>
   );
 }

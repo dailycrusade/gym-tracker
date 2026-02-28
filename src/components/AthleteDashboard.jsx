@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { machineName } from '../lib/utils';
+import Footer from './Footer';
 
 // ── Formatting helpers ────────────────────────────────────────────────────────
 
@@ -53,44 +55,101 @@ function StatTile({ label, value }) {
   );
 }
 
-const MACHINE_META = {
-  ECHO_BIKE: { label: 'Echo Bike', style: 'bg-blue-900 text-blue-300' },
-  SKI_ERG:   { label: 'Ski Erg',   style: 'bg-violet-900 text-violet-300' },
-};
+function TrashIcon() {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="w-5 h-5"
+    >
+      <polyline points="3 6 5 6 21 6" />
+      <path d="M19 6l-1 14H6L5 6" />
+      <path d="M10 11v6M14 11v6" />
+      <path d="M9 6V4h6v2" />
+    </svg>
+  );
+}
 
-function WorkoutCard({ workout }) {
+function WorkoutCard({ workout, onDelete }) {
+  const [confirming, setConfirming] = useState(false);
   const stats = workout.workout_stats?.[0];
-  const meta = MACHINE_META[workout.machine] ?? { label: workout.machine, style: 'bg-gray-700 text-gray-300' };
+  const label = machineName(workout.machine);
+  const badgeStyle =
+    workout.machine === 'ski_erg'
+      ? 'bg-violet-900 text-violet-300'
+      : 'bg-blue-900 text-blue-300';
 
   return (
-    <div className="bg-gray-800 rounded-2xl p-5 flex flex-col gap-3">
-      {/* Machine + date row */}
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <span className={`text-lg font-bold px-3 py-1 rounded-lg ${meta.style}`}>
-          {meta.label}
-        </span>
-        <span className="text-gray-400 text-base">
-          {formatDate(workout.started_at)} at {formatTimeOfDay(workout.started_at)}
-        </span>
+    <>
+      <div className="bg-gray-800 rounded-2xl p-5 flex flex-col gap-3">
+        {/* Machine + date + delete row */}
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <span className={`text-lg font-bold px-3 py-1 rounded-lg ${badgeStyle}`}>
+            {label}
+          </span>
+          <div className="flex items-center gap-3">
+            <span className="text-gray-400 text-base">
+              {formatDate(workout.started_at)} at {formatTimeOfDay(workout.started_at)}
+            </span>
+            <button
+              onClick={() => setConfirming(true)}
+              className="text-gray-600 hover:text-red-400 transition-colors p-1"
+              aria-label="Delete workout"
+            >
+              <TrashIcon />
+            </button>
+          </div>
+        </div>
+
+        {/* Stats row */}
+        <div className="flex flex-wrap gap-x-6 gap-y-1 text-lg">
+          <Stat label="Duration" value={formatDuration(workout.duration_seconds)} />
+          {stats?.distance_meters != null && (
+            <Stat label="Distance" value={formatDistance(stats.distance_meters)} />
+          )}
+          {stats?.calories != null && (
+            <Stat label="Calories" value={`${stats.calories} kcal`} />
+          )}
+          {stats?.avg_watts != null && (
+            <Stat label="Avg power" value={`${stats.avg_watts} W`} />
+          )}
+          {stats?.max_watts != null && (
+            <Stat label="Max power" value={`${stats.max_watts} W`} />
+          )}
+        </div>
       </div>
 
-      {/* Stats row */}
-      <div className="flex flex-wrap gap-x-6 gap-y-1 text-lg">
-        <Stat label="Duration" value={formatDuration(workout.duration_seconds)} />
-        {stats?.distance_meters != null && (
-          <Stat label="Distance" value={formatDistance(stats.distance_meters)} />
-        )}
-        {stats?.calories != null && (
-          <Stat label="Calories" value={`${stats.calories} kcal`} />
-        )}
-        {stats?.avg_watts != null && (
-          <Stat label="Avg power" value={`${stats.avg_watts} W`} />
-        )}
-        {stats?.max_watts != null && (
-          <Stat label="Max power" value={`${stats.max_watts} W`} />
-        )}
-      </div>
-    </div>
+      {/* Delete confirmation modal */}
+      {confirming && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-6">
+          <div className="bg-gray-800 rounded-2xl p-8 flex flex-col gap-6 w-full max-w-sm">
+            <p className="text-2xl font-bold text-white">Delete workout?</p>
+            <p className="text-gray-400 text-lg">
+              {label} — {formatDate(workout.started_at)}
+            </p>
+            <div className="flex gap-4">
+              <button
+                onClick={() => setConfirming(false)}
+                className="flex-1 bg-gray-700 hover:bg-gray-600 active:scale-95 text-white text-xl font-semibold py-5 rounded-2xl transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => { setConfirming(false); onDelete(workout.id); }}
+                className="flex-1 bg-red-700 hover:bg-red-600 active:scale-95 text-white text-xl font-semibold py-5 rounded-2xl transition-all"
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -122,6 +181,11 @@ export default function AthleteDashboard({ athlete, onStartWorkout, onLogout }) 
     }
     fetchWorkouts();
   }, [athlete.id]);
+
+  async function handleDelete(id) {
+    await supabase.from('workouts').delete().eq('id', id);
+    setWorkouts((prev) => prev.filter((w) => w.id !== id));
+  }
 
   // Aggregate summary stats
   const totalWorkouts = workouts.length;
@@ -185,13 +249,15 @@ export default function AthleteDashboard({ athlete, onStartWorkout, onLogout }) 
                 <p className="text-xl text-gray-600">Hit Start Workout to get going!</p>
               </div>
             ) : (
-              workouts.map((w) => <WorkoutCard key={w.id} workout={w} />)
+              workouts.map((w) => (
+                <WorkoutCard key={w.id} workout={w} onDelete={handleDelete} />
+              ))
             )}
           </div>
         </>
       )}
 
-      <span className="fixed bottom-2 right-3 text-xs text-gray-600 select-none">v0.1.5</span>
+      <Footer />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import Footer from './Footer';
 
 function PinDots({ filled }) {
   return (
@@ -126,6 +127,7 @@ export default function AthleteLogin({ onLogin }) {
     return (
       <div className="min-h-screen bg-gray-950 text-white flex items-center justify-center text-3xl font-semibold">
         Loading…
+        <Footer />
       </div>
     );
   }
@@ -146,6 +148,7 @@ export default function AthleteLogin({ onLogin }) {
         >
           ← Back
         </button>
+        <Footer />
       </div>
     );
   }
@@ -180,6 +183,7 @@ export default function AthleteLogin({ onLogin }) {
         >
           ← Back
         </button>
+        <Footer />
       </div>
     );
   }
@@ -215,6 +219,7 @@ export default function AthleteLogin({ onLogin }) {
           + New Athlete
         </button>
       </div>
+      <Footer />
     </div>
   );
 }
