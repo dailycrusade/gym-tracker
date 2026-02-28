@@ -27,6 +27,14 @@ function fmtDistance(meters) {
   return `${(meters / 1000).toFixed(2)} km`;
 }
 
+function fmtDate(iso) {
+  if (!iso) return '—';
+  const d = new Date(iso);
+  const opts = { month: 'short', day: 'numeric' };
+  if (d.getFullYear() !== new Date().getFullYear()) opts.year = 'numeric';
+  return d.toLocaleDateString('en-US', opts);
+}
+
 function fmtTime(totalSeconds) {
   if (!totalSeconds) return '—';
   if (totalSeconds >= 3600) {
@@ -184,6 +192,23 @@ function StreakRow({ entry, rank }) {
   );
 }
 
+function PeakPowerRow({ entry, rank, showMachine }) {
+  return (
+    <RowShell>
+      <Rank n={rank} />
+      <AthleteName athlete={entry.athlete} />
+      <div className="ml-auto flex flex-col items-end shrink-0">
+        <span className="text-2xl font-semibold tabular-nums text-white">
+          {entry.watts} W
+        </span>
+        <span className="text-gray-500 text-sm">
+          {showMachine ? `${machineName(entry.machine)} · ` : ''}{fmtDate(entry.date)}
+        </span>
+      </div>
+    </RowShell>
+  );
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 const PERIOD_TABS = [
@@ -211,9 +236,9 @@ export default function Leaderboard() {
       let query = supabase
         .from('workouts')
         .select(
-          'id, athlete_id, machine, duration_seconds, ended_at, ' +
+          'id, athlete_id, machine, duration_seconds, ended_at, started_at, ' +
           'athletes(id, name, color), ' +
-          'workout_stats(distance_meters, avg_watts)'
+          'workout_stats(distance_meters, avg_watts, max_watts)'
         );
 
       const start = getStartDate(period);
@@ -289,6 +314,19 @@ export default function Leaderboard() {
       .slice(0, 10);
   }, [rows]);
 
+  const peakPowerRanking = useMemo(() => {
+    const map = {};
+    rows.forEach((w) => {
+      const p = w.workout_stats?.[0]?.max_watts;
+      if (p == null) return;
+      const id = w.athlete_id;
+      if (!map[id] || Number(p) > map[id].watts) {
+        map[id] = { athlete: w.athletes, watts: Number(p), machine: w.machine, date: w.started_at };
+      }
+    });
+    return Object.values(map).sort((a, b) => b.watts - a.watts).slice(0, 10);
+  }, [rows]);
+
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
@@ -316,7 +354,7 @@ export default function Leaderboard() {
           Loading…
         </div>
       ) : (
-        <div className="grid gap-10 lg:grid-cols-4">
+        <div className="grid gap-10 lg:grid-cols-5">
 
           {/* Most Distance */}
           <div className="flex flex-col gap-2">
@@ -359,6 +397,21 @@ export default function Leaderboard() {
             {streakRanking.length === 0 ? <EmptyRows /> : (
               streakRanking.map((entry, i) => (
                 <StreakRow key={entry.athlete.id} entry={entry} rank={i + 1} />
+              ))
+            )}
+          </div>
+
+          {/* Peak Power */}
+          <div className="flex flex-col gap-2">
+            <SectionDivider title="Peak Power" />
+            {peakPowerRanking.length === 0 ? <EmptyRows /> : (
+              peakPowerRanking.map((entry, i) => (
+                <PeakPowerRow
+                  key={entry.athlete.id}
+                  entry={entry}
+                  rank={i + 1}
+                  showMachine={machine === 'all'}
+                />
               ))
             )}
           </div>

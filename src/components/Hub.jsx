@@ -83,6 +83,19 @@ function aggregateStreak(rows) {
     .sort((a, b) => b.current - a.current);
 }
 
+function aggregatePeakPower(rows) {
+  const map = {};
+  rows.forEach((w) => {
+    const p = w.workout_stats?.[0]?.max_watts;
+    if (p == null) return;
+    const id = w.athlete_id;
+    if (!map[id] || Number(p) > map[id].watts) {
+      map[id] = { athlete: w.athletes, watts: Number(p) };
+    }
+  });
+  return Object.values(map).sort((a, b) => b.watts - a.watts);
+}
+
 // ── Sub-components ────────────────────────────────────────────────────────────
 
 const RANK_STYLES = {
@@ -145,7 +158,7 @@ export default function Hub() {
         // This week's completed workouts for leaderboard
         supabase
           .from('workouts')
-          .select('athlete_id, machine, ended_at, athletes(id, name, color), workout_stats(distance_meters, avg_watts)')
+          .select('athlete_id, machine, ended_at, athletes(id, name, color), workout_stats(distance_meters, avg_watts, max_watts)')
           .gte('started_at', getWeekStart())
           .not('ended_at', 'is', null),
 
@@ -171,9 +184,10 @@ export default function Hub() {
     return () => { cancelled = true; clearInterval(id); };
   }, []);
 
-  const distanceTop3 = useMemo(() => aggregateDistance(weekRows).slice(0, 3), [weekRows]);
-  const powerTop3    = useMemo(() => aggregatePower(weekRows).slice(0, 3),    [weekRows]);
-  const streakTop3   = useMemo(() => aggregateStreak(weekRows).slice(0, 3),   [weekRows]);
+  const distanceTop3   = useMemo(() => aggregateDistance(weekRows).slice(0, 3),   [weekRows]);
+  const powerTop3      = useMemo(() => aggregatePower(weekRows).slice(0, 3),      [weekRows]);
+  const streakTop3     = useMemo(() => aggregateStreak(weekRows).slice(0, 3),     [weekRows]);
+  const peakPowerTop3  = useMemo(() => aggregatePeakPower(weekRows).slice(0, 3),  [weekRows]);
 
   // Clock strings
   const timeStr = new Intl.DateTimeFormat('en-US', {
@@ -241,7 +255,7 @@ export default function Hub() {
             {/* This Week's Leaderboard */}
             <div className="bg-gray-900 rounded-2xl p-6">
               <PanelHeader title="This Week" />
-              <div className="grid grid-cols-3 gap-6">
+              <div className="grid grid-cols-4 gap-6">
 
                 <div>
                   <p className="text-gray-600 text-xs uppercase tracking-widest mb-4">Distance</p>
@@ -302,6 +316,28 @@ export default function Hub() {
                           </span>
                           <span className="ml-auto text-lg font-semibold tabular-nums shrink-0">
                             🔥 {e.current}d
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <p className="text-gray-600 text-xs uppercase tracking-widest mb-4">Peak Power</p>
+                  {peakPowerTop3.length === 0 ? (
+                    <p className="text-gray-700 text-lg">No data</p>
+                  ) : (
+                    <div className="flex flex-col gap-4">
+                      {peakPowerTop3.map((e, i) => (
+                        <div key={e.athlete.id} className="flex items-center gap-2">
+                          <RankBadge n={i + 1} />
+                          <span className="text-lg font-bold truncate"
+                            style={{ color: e.athlete.color ?? '#3b82f6' }}>
+                            {e.athlete.name}
+                          </span>
+                          <span className="ml-auto text-lg font-semibold tabular-nums shrink-0">
+                            {e.watts} W
                           </span>
                         </div>
                       ))}
