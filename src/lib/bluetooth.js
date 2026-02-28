@@ -144,12 +144,37 @@ function parseRowingMachineData(dataView) {
   return result;
 }
 
+// All known FTMS characteristic UUIDs — required in optionalServices for the fallback path
+// so Chrome grants access to them even without a service filter.
+const FTMS_CHARACTERISTICS = [
+  0x2acc, // Fitness Machine Feature
+  0x2ad1, // Rower / Ski Erg Data
+  0x2ad2, // Indoor Bike Data
+  0x2ad3, // Training Status
+  0x2ad6, // Supported Resistance Level Range
+  0x2ad8, // Supported Power Range
+  0x2ad9, // Fitness Machine Control Point
+  0x2ada, // Fitness Machine Status
+];
+
+// Extracts the short 16-bit UUID string from a full 128-bit BLE UUID string.
+// e.g. "00001826-0000-1000-8000-00805f9b34fb" → "0x1826"
+function shortUuid(uuid) {
+  return '0x' + uuid.slice(4, 8).toUpperCase();
+}
+
 // ---------------------------------------------------------------------------
 // connectToMachine
 //
 // Opens the browser Bluetooth device picker (requires a user gesture),
 // connects to the FTMS service, subscribes to notifications, and returns
 // a handle to disconnect when done.
+//
+// On Linux / Raspberry Pi, Chrome's FTMS service filter sometimes fails
+// because the device only includes the service UUID in scan-response data
+// rather than the primary advertisement. This function first tries the strict
+// filter, then falls back to acceptAllDevices with optionalServices so the
+// user can manually select the Rogue machine.
 //
 // @param {string}   machineType  - MACHINE_TYPES.ECHO_BIKE | MACHINE_TYPES.SKI_ERG
 // @param {function} onMetrics    - Called with a parsed metric object on every notification
@@ -173,28 +198,71 @@ export async function connectToMachine(machineType, onMetrics, onDisconnect) {
       ? parseRowingMachineData
       : parseIndoorBikeData;
 
-  // Show the browser device picker — only FTMS devices appear
-  const device = await navigator.bluetooth.requestDevice({
-    filters: [{ services: [FTMS_SERVICE] }],
-  });
+  // --- 1. Device picker: strict filter first, fall back to acceptAllDevices ---
+
+  let device;
+  try {
+    console.log('[bluetooth] Requesting device with strict FTMS service filter (0x1826)…');
+    device = await navigator.bluetooth.requestDevice({
+      filters: [{ services: [FTMS_SERVICE] }],
+    });
+    console.log('[bluetooth] Device selected via strict filter:', device.name);
+  } catch (strictErr) {
+    console.warn('[bluetooth] Strict FTMS filter failed:', strictErr.message);
+    console.log('[bluetooth] Retrying with acceptAllDevices + optionalServices fallback…');
+
+    device = await navigator.bluetooth.requestDevice({
+      acceptAllDevices: true,
+      optionalServices: [FTMS_SERVICE, ...FTMS_CHARACTERISTICS],
+    });
+    console.log('[bluetooth] Device selected via fallback picker:', device.name);
+  }
 
   device.addEventListener('gattserverdisconnected', () => {
     onDisconnect?.();
   });
 
+  // --- 2. GATT connection + service/characteristic discovery logging ---
+
+  console.log('[bluetooth] Connecting to GATT server on:', device.name);
   const server = await device.gatt.connect();
+  console.log('[bluetooth] GATT connected.');
+
+  // NOTE: getPrimaryServices() with no args is intentionally omitted here.
+  // On Linux/BlueZ it triggers a full GATT service discovery that the Rogue
+  // rejects, silently killing the connection before we can use it.
   const service = await server.getPrimaryService(FTMS_SERVICE);
+  console.log('[bluetooth] FTMS service (0x1826) obtained.');
+
+  // Log every characteristic inside the FTMS service.
+  try {
+    const allChars = await service.getCharacteristics();
+    console.log(
+      '[bluetooth] Characteristics in FTMS service:',
+      allChars.map((c) => shortUuid(c.uuid))
+    );
+  } catch (charErr) {
+    console.warn('[bluetooth] Could not enumerate characteristics:', charErr.message);
+  }
+
   const characteristic = await service.getCharacteristic(charUuid);
+  console.log('[bluetooth] Subscribing to characteristic:', shortUuid(characteristic.uuid));
 
   characteristic.addEventListener('characteristicvaluechanged', (event) => {
+    const dv = event.target.value;
+    const bytes = Array.from({ length: dv.byteLength }, (_, i) =>
+      dv.getUint8(i).toString(16).padStart(2, '0')
+    ).join(' ');
+    console.log('[bluetooth] Raw notification bytes:', bytes);
     try {
-      onMetrics(parseData(event.target.value));
+      onMetrics(parseData(dv));
     } catch (err) {
       console.warn('[bluetooth] Failed to parse FTMS notification:', err);
     }
   });
 
   await characteristic.startNotifications();
+  console.log('[bluetooth] Notifications started. Ready.');
 
   return {
     deviceName: device.name ?? 'Unknown Device',
