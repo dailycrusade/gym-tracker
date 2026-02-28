@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { connectToMachine, MACHINE_TYPES } from '../lib/bluetooth';
+import { supabase } from '../lib/supabase';
 
 const INITIAL_METRICS = {
   watts: null,
@@ -36,19 +37,25 @@ function MetricCard({ label, value, unit, accent = false }) {
   );
 }
 
-export default function BluetoothTest() {
-  const [status, setStatus] = useState('disconnected'); // disconnected | connecting | connected
+export default function BluetoothTest({ athlete, onLogout, onWorkoutDone }) {
+  const [status, setStatus] = useState('disconnected'); // disconnected | connecting | connected | reconnecting
   const [activeMachine, setActiveMachine] = useState(null);
   const [deviceName, setDeviceName] = useState('');
   const [metrics, setMetrics] = useState(INITIAL_METRICS);
   const [elapsed, setElapsed] = useState(0);
   const [error, setError] = useState(null);
+  const [saveState, setSaveState] = useState(null); // null | 'saving' | 'saved' | 'error'
 
   const connRef = useRef(null);
   const timerRef = useRef(null);
   // True until the first 'connected' after a full disconnect, so elapsed
   // resets for a new session but NOT when reconnecting mid-session.
   const resetElapsedRef = useRef(true);
+
+  // Accumulated per-workout metric samples for avg/max calculation
+  const wattsHistoryRef = useRef([]);
+  const cadenceHistoryRef = useRef([]);
+  const workoutStartRef = useRef(null);
 
   // Elapsed-time timer — keeps running through 'reconnecting' so the session
   // clock doesn't stutter when BlueZ briefly drops the GATT link.
@@ -84,11 +91,15 @@ export default function BluetoothTest() {
     setActiveMachine(null);
     setDeviceName('');
     connRef.current = null;
+    wattsHistoryRef.current = [];
+    cadenceHistoryRef.current = [];
+    workoutStartRef.current = null;
   }
 
-  function handleDisconnect() {
+  function handleLogout() {
     connRef.current?.disconnect();
     resetState();
+    onLogout();
   }
 
   async function handleConnect(machineType) {
@@ -101,6 +112,10 @@ export default function BluetoothTest() {
           // If we were reconnecting, the arrival of new data means we're back.
           setStatus((s) => (s === 'reconnecting' ? 'connected' : s));
           setMetrics((prev) => ({ ...prev, ...newMetrics }));
+          // Accumulate samples for end-of-workout stats
+          if (newMetrics.watts != null) wattsHistoryRef.current.push(newMetrics.watts);
+          const cad = newMetrics.cadence ?? newMetrics.strokeRate;
+          if (cad != null) cadenceHistoryRef.current.push(cad);
         },
         resetState,                          // called only after all reconnect attempts fail
         () => setStatus('reconnecting'),     // called when a disconnect is detected
@@ -109,12 +124,75 @@ export default function BluetoothTest() {
       setDeviceName(conn.deviceName);
       setActiveMachine(machineType);
       setStatus('connected');
+      workoutStartRef.current = new Date().toISOString();
+      wattsHistoryRef.current = [];
+      cadenceHistoryRef.current = [];
     } catch (err) {
       setStatus('disconnected');
       // NotFoundError / AbortError = user closed the picker — not an error worth showing
       if (err.name !== 'NotFoundError' && err.name !== 'AbortError') {
         setError(err.message ?? 'Connection failed');
       }
+    }
+  }
+
+  async function handleEndWorkout() {
+    const endedAt = new Date();
+
+    // Capture all values before any state changes
+    const machine = activeMachine;
+    const totalSeconds = elapsed;
+    const finalMetrics = { ...metrics };
+    const wattsArr = [...wattsHistoryRef.current];
+    const cadenceArr = [...cadenceHistoryRef.current];
+
+    const avgWatts = wattsArr.length
+      ? Math.round(wattsArr.reduce((a, b) => a + b, 0) / wattsArr.length)
+      : null;
+    const maxWatts = wattsArr.length ? Math.max(...wattsArr) : null;
+    const avgCadence = cadenceArr.length
+      ? Math.round(cadenceArr.reduce((a, b) => a + b, 0) / cadenceArr.length)
+      : null;
+
+    // Disconnect BLE — show overlay while saving so the user sees feedback
+    connRef.current?.disconnect();
+    connRef.current = null;
+    setSaveState('saving');
+
+    try {
+      const { data: workout, error: workoutErr } = await supabase
+        .from('workouts')
+        .insert({
+          athlete_id: athlete.id,
+          machine,
+          started_at: workoutStartRef.current,
+          ended_at: endedAt.toISOString(),
+          duration_seconds: totalSeconds,
+        })
+        .select()
+        .single();
+
+      if (workoutErr) throw workoutErr;
+
+      const { error: statsErr } = await supabase
+        .from('workout_stats')
+        .insert({
+          workout_id: workout.id,
+          distance_meters: finalMetrics.distance,
+          avg_watts: avgWatts,
+          max_watts: maxWatts,
+          avg_cadence: avgCadence,
+          calories: finalMetrics.calories,
+        });
+
+      if (statsErr) throw statsErr;
+
+      setSaveState('saved');
+      setTimeout(() => { setSaveState(null); resetState(); onWorkoutDone(); }, 2000);
+    } catch (err) {
+      setError(err.message ?? 'Failed to save workout');
+      setSaveState('error');
+      setTimeout(() => { setSaveState(null); resetState(); onWorkoutDone(); }, 3000);
     }
   }
 
@@ -138,13 +216,44 @@ export default function BluetoothTest() {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white flex flex-col p-8 gap-6">
+      {/* ── Save overlay ── */}
+      {saveState && (
+        <div className="fixed inset-0 bg-gray-950/95 flex flex-col items-center justify-center z-50 gap-4">
+          {saveState === 'saving' && (
+            <p className="text-4xl font-bold text-white">Saving workout…</p>
+          )}
+          {saveState === 'saved' && (
+            <p className="text-5xl font-bold text-green-400">Workout saved! ✓</p>
+          )}
+          {saveState === 'error' && (
+            <>
+              <p className="text-4xl font-bold text-red-400">Save failed</p>
+              <p className="text-xl text-gray-400">{error}</p>
+              <p className="text-lg text-gray-500">Returning to dashboard…</p>
+            </>
+          )}
+        </div>
+      )}
+
       {/* ── Header ── */}
-      <div className="flex items-center justify-between">
-        <h1 className="text-4xl font-bold tracking-tight">Gym Tracker</h1>
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-4 min-w-0">
+          <h1 className="text-4xl font-bold tracking-tight shrink-0">Gym Tracker</h1>
+          {/* Athlete badge */}
+          <div className="flex items-center gap-3 bg-gray-800 px-4 py-2 rounded-xl min-w-0">
+            <span className="text-gray-200 text-lg font-medium truncate">{athlete.name}</span>
+            <button
+              onClick={handleLogout}
+              className="text-gray-500 hover:text-red-400 text-sm font-medium shrink-0 transition-colors"
+            >
+              Logout
+            </button>
+          </div>
+        </div>
 
         {/* Connection status badge */}
         <div
-          className={`flex items-center gap-2 px-5 py-2 rounded-full text-lg font-semibold ${
+          className={`flex items-center gap-2 px-5 py-2 rounded-full text-lg font-semibold shrink-0 ${
             isConnected
               ? 'bg-green-800 text-green-100'
               : isConnecting || isReconnecting
@@ -153,7 +262,7 @@ export default function BluetoothTest() {
           }`}
         >
           <span
-            className={`w-3 h-3 rounded-full ${
+            className={`w-3 h-3 rounded-full shrink-0 ${
               isConnected
                 ? 'bg-green-400'
                 : isConnecting || isReconnecting
@@ -172,7 +281,7 @@ export default function BluetoothTest() {
       </div>
 
       {/* ── Error banner ── */}
-      {error && (
+      {error && !saveState && (
         <div className="bg-red-950 border border-red-700 text-red-300 rounded-xl px-6 py-4 text-xl">
           ⚠ {error}
         </div>
@@ -228,14 +337,14 @@ export default function BluetoothTest() {
         </div>
       )}
 
-      {/* ── Disconnect button ── */}
+      {/* ── End Workout button ── */}
       {(isConnected || isReconnecting) && (
         <div className="flex justify-center">
           <button
-            onClick={handleDisconnect}
-            className="bg-gray-700 hover:bg-gray-600 active:scale-95 text-gray-200 text-xl font-semibold py-3 px-12 rounded-xl transition-all"
+            onClick={handleEndWorkout}
+            className="bg-green-700 hover:bg-green-600 active:scale-95 text-white text-2xl font-bold py-5 px-16 rounded-2xl transition-all shadow-xl"
           >
-            Disconnect
+            End Workout
           </button>
         </div>
       )}
@@ -248,7 +357,7 @@ export default function BluetoothTest() {
       )}
 
       {/* ── Version indicator ── */}
-      <span className="fixed bottom-2 right-3 text-xs text-gray-600 select-none">v0.1.3</span>
+      <span className="fixed bottom-2 right-3 text-xs text-gray-600 select-none">v0.1.5</span>
     </div>
   );
 }
