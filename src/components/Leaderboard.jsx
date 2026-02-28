@@ -158,23 +158,6 @@ function PowerRow({ entry, rank, showMachine }) {
   );
 }
 
-function WorkoutsRow({ entry, rank }) {
-  return (
-    <RowShell>
-      <Rank n={rank} />
-      <AthleteName athlete={entry.athlete} />
-      <div className="ml-auto flex flex-col items-end shrink-0">
-        <span className="text-2xl font-semibold tabular-nums text-white">
-          {entry.count}
-        </span>
-        <span className="text-gray-500 text-sm tabular-nums">
-          {fmtTime(entry.totalSeconds)}
-        </span>
-      </div>
-    </RowShell>
-  );
-}
-
 function StreakRow({ entry, rank }) {
   return (
     <RowShell>
@@ -285,17 +268,6 @@ export default function Leaderboard() {
     return Object.values(map).sort((a, b) => b.watts - a.watts).slice(0, 10);
   }, [rows]);
 
-  const workoutsRanking = useMemo(() => {
-    const map = {};
-    rows.forEach((w) => {
-      const id = w.athlete_id;
-      if (!map[id]) map[id] = { athlete: w.athletes, count: 0, totalSeconds: 0 };
-      map[id].count += 1;
-      map[id].totalSeconds += w.duration_seconds ?? 0;
-    });
-    return Object.values(map).sort((a, b) => b.count - a.count).slice(0, 10);
-  }, [rows]);
-
   const streakRanking = useMemo(() => {
     const byAthlete = {};
     rows.forEach((w) => {
@@ -354,7 +326,7 @@ export default function Leaderboard() {
           Loading…
         </div>
       ) : (
-        <div className="grid gap-10 lg:grid-cols-5">
+        <div className="grid gap-10 lg:grid-cols-4">
 
           {/* Most Distance */}
           <div className="flex flex-col gap-2">
@@ -366,9 +338,9 @@ export default function Leaderboard() {
             )}
           </div>
 
-          {/* Most Power */}
+          {/* Avg Power */}
           <div className="flex flex-col gap-2">
-            <SectionDivider title="Most Power" />
+            <SectionDivider title="Avg Power" />
             {powerRanking.length === 0 ? <EmptyRows /> : (
               powerRanking.map((entry, i) => (
                 <PowerRow
@@ -377,26 +349,6 @@ export default function Leaderboard() {
                   rank={i + 1}
                   showMachine={machine === 'all'}
                 />
-              ))
-            )}
-          </div>
-
-          {/* Most Workouts */}
-          <div className="flex flex-col gap-2">
-            <SectionDivider title="Most Workouts" />
-            {workoutsRanking.length === 0 ? <EmptyRows /> : (
-              workoutsRanking.map((entry, i) => (
-                <WorkoutsRow key={entry.athlete.id} entry={entry} rank={i + 1} />
-              ))
-            )}
-          </div>
-
-          {/* Longest Active Streak */}
-          <div className="flex flex-col gap-2">
-            <SectionDivider title="Longest Active Streak" />
-            {streakRanking.length === 0 ? <EmptyRows /> : (
-              streakRanking.map((entry, i) => (
-                <StreakRow key={entry.athlete.id} entry={entry} rank={i + 1} />
               ))
             )}
           </div>
@@ -412,6 +364,16 @@ export default function Leaderboard() {
                   rank={i + 1}
                   showMachine={machine === 'all'}
                 />
+              ))
+            )}
+          </div>
+
+          {/* Longest Active Streak */}
+          <div className="flex flex-col gap-2">
+            <SectionDivider title="Longest Active Streak" />
+            {streakRanking.length === 0 ? <EmptyRows /> : (
+              streakRanking.map((entry, i) => (
+                <StreakRow key={entry.athlete.id} entry={entry} rank={i + 1} />
               ))
             )}
           </div>

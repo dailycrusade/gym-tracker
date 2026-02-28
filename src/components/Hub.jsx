@@ -280,12 +280,34 @@ export default function Hub() {
                 </div>
 
                 <div>
-                  <p className="text-gray-600 text-xs uppercase tracking-widest mb-4">Power</p>
+                  <p className="text-gray-600 text-xs uppercase tracking-widest mb-4">Avg Power</p>
                   {powerTop3.length === 0 ? (
                     <p className="text-gray-700 text-lg">No data</p>
                   ) : (
                     <div className="flex flex-col gap-4">
                       {powerTop3.map((e, i) => (
+                        <div key={e.athlete.id} className="flex items-center gap-2">
+                          <RankBadge n={i + 1} />
+                          <span className="text-lg font-bold truncate"
+                            style={{ color: e.athlete.color ?? '#3b82f6' }}>
+                            {e.athlete.name}
+                          </span>
+                          <span className="ml-auto text-lg font-semibold tabular-nums shrink-0">
+                            {e.watts} W
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <p className="text-gray-600 text-xs uppercase tracking-widest mb-4">Peak Power</p>
+                  {peakPowerTop3.length === 0 ? (
+                    <p className="text-gray-700 text-lg">No data</p>
+                  ) : (
+                    <div className="flex flex-col gap-4">
+                      {peakPowerTop3.map((e, i) => (
                         <div key={e.athlete.id} className="flex items-center gap-2">
                           <RankBadge n={i + 1} />
                           <span className="text-lg font-bold truncate"
@@ -316,28 +338,6 @@ export default function Hub() {
                           </span>
                           <span className="ml-auto text-lg font-semibold tabular-nums shrink-0">
                             🔥 {e.current}d
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <div>
-                  <p className="text-gray-600 text-xs uppercase tracking-widest mb-4">Peak Power</p>
-                  {peakPowerTop3.length === 0 ? (
-                    <p className="text-gray-700 text-lg">No data</p>
-                  ) : (
-                    <div className="flex flex-col gap-4">
-                      {peakPowerTop3.map((e, i) => (
-                        <div key={e.athlete.id} className="flex items-center gap-2">
-                          <RankBadge n={i + 1} />
-                          <span className="text-lg font-bold truncate"
-                            style={{ color: e.athlete.color ?? '#3b82f6' }}>
-                            {e.athlete.name}
-                          </span>
-                          <span className="ml-auto text-lg font-semibold tabular-nums shrink-0">
-                            {e.watts} W
                           </span>
                         </div>
                       ))}
