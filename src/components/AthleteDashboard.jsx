@@ -3,6 +3,14 @@ import { supabase } from '../lib/supabase';
 import { machineName } from '../lib/utils';
 import Footer from './Footer';
 
+// ── Constants ─────────────────────────────────────────────────────────────────
+
+const PALETTE = [
+  '#ef4444', '#f97316', '#eab308', '#84cc16',
+  '#22c55e', '#14b8a6', '#06b6d4', '#3b82f6',
+  '#8b5cf6', '#a855f7', '#ec4899', '#f43f5e',
+];
+
 // ── Formatting helpers ────────────────────────────────────────────────────────
 
 function formatDuration(totalSeconds) {
@@ -29,44 +37,42 @@ function formatDistance(meters) {
 
 function formatDate(iso) {
   return new Date(iso).toLocaleDateString('en-GB', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
+    day: 'numeric', month: 'short', year: 'numeric',
   });
 }
 
 function formatTimeOfDay(iso) {
   return new Date(iso).toLocaleTimeString('en-GB', {
-    hour: '2-digit',
-    minute: '2-digit',
+    hour: '2-digit', minute: '2-digit',
   });
 }
 
-// ── Sub-components ────────────────────────────────────────────────────────────
+// ── Icons ─────────────────────────────────────────────────────────────────────
 
-function StatTile({ label, value }) {
+function GearIcon() {
   return (
-    <div className="bg-gray-800 rounded-2xl p-5 flex flex-col items-center gap-1">
-      <span className="text-gray-400 text-sm uppercase tracking-widest font-semibold">
-        {label}
-      </span>
-      <span className="text-white text-3xl font-bold tabular-nums">{value}</span>
-    </div>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+      className="w-6 h-6">
+      <circle cx="12" cy="12" r="3" />
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06
+        a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09
+        A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83
+        l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09
+        A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83
+        l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09
+        a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83
+        l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09
+        a1.65 1.65 0 0 0-1.51 1z" />
+    </svg>
   );
 }
 
 function TrashIcon() {
   return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="w-5 h-5"
-    >
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+      stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+      className="w-5 h-5">
       <polyline points="3 6 5 6 21 6" />
       <path d="M19 6l-1 14H6L5 6" />
       <path d="M10 11v6M14 11v6" />
@@ -75,7 +81,197 @@ function TrashIcon() {
   );
 }
 
-function WorkoutCard({ workout, onDelete }) {
+// ── PIN helpers (used in the edit modal) ──────────────────────────────────────
+
+function PinDots({ filled }) {
+  return (
+    <div className="flex gap-5 justify-center my-2">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i} className={`w-6 h-6 rounded-full border-2 transition-all ${
+          i < filled ? 'bg-white border-white' : 'bg-transparent border-gray-500'
+        }`} />
+      ))}
+    </div>
+  );
+}
+
+function PinKeypad({ onDigit, onBackspace }) {
+  const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '⌫', '0', ''];
+  return (
+    <div className="grid grid-cols-3 gap-3 w-full max-w-xs mx-auto">
+      {keys.map((key, i) =>
+        key === '' ? <div key={i} /> : (
+          <button key={i}
+            onClick={() => key === '⌫' ? onBackspace() : onDigit(key)}
+            className="bg-gray-700 hover:bg-gray-600 active:scale-95 text-white text-3xl font-bold py-5 rounded-2xl transition-all select-none"
+          >
+            {key}
+          </button>
+        )
+      )}
+    </div>
+  );
+}
+
+// ── Edit Profile Modal ────────────────────────────────────────────────────────
+
+function EditProfileModal({ athlete, onDone, onCancel, onLogout }) {
+  const [name, setName] = useState(athlete.name);
+  const [color, setColor] = useState(athlete.color ?? '#3b82f6');
+  const [deleteStep, setDeleteStep] = useState('idle'); // 'idle' | 'confirmPin'
+  const [deletePin, setDeletePin] = useState('');
+  const [error, setError] = useState(null);
+  const [saving, setSaving] = useState(false);
+
+  async function handleSave() {
+    const trimmed = name.trim();
+    if (!trimmed) { setError('Name cannot be empty.'); return; }
+    setSaving(true);
+    setError(null);
+    const { data, error: err } = await supabase
+      .from('athletes')
+      .update({ name: trimmed, color })
+      .eq('id', athlete.id)
+      .select()
+      .single();
+    setSaving(false);
+    if (err) { setError(err.message); return; }
+    onDone(data);
+  }
+
+  function handleDeletePinDigit(digit) {
+    if (deletePin.length >= 4) return;
+    const next = deletePin + digit;
+    setDeletePin(next);
+    if (next.length === 4) setTimeout(() => confirmDelete(next), 120);
+  }
+
+  async function confirmDelete(entered) {
+    if (entered !== athlete.pin) {
+      setError('Wrong PIN — try again');
+      setDeletePin('');
+      return;
+    }
+    setSaving(true);
+    await supabase.from('athletes').delete().eq('id', athlete.id);
+    onLogout();
+  }
+
+  return (
+    <div className="fixed inset-0 bg-black/75 z-50 flex items-start justify-center p-4 overflow-y-auto">
+      <div className="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-md flex flex-col gap-6 p-8 my-8">
+
+        {/* Title + close */}
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-white">Edit Profile</h2>
+          <button onClick={onCancel}
+            className="text-gray-500 hover:text-white text-xl leading-none transition-colors p-1">
+            ✕
+          </button>
+        </div>
+
+        {error && <p className="text-red-400 text-lg font-medium">{error}</p>}
+
+        {/* Name */}
+        <div className="flex flex-col gap-2">
+          <label className="text-gray-400 text-sm uppercase tracking-widest font-semibold">
+            Name
+          </label>
+          <input
+            className="bg-gray-800 text-white text-2xl px-5 py-4 rounded-2xl outline-none focus:ring-2 focus:ring-blue-500"
+            value={name}
+            onChange={(e) => { setName(e.target.value); setError(null); }}
+          />
+        </div>
+
+        {/* Color palette */}
+        <div className="flex flex-col gap-3">
+          <label className="text-gray-400 text-sm uppercase tracking-widest font-semibold">
+            Color
+          </label>
+          <div className="grid grid-cols-6 gap-3">
+            {PALETTE.map((c) => (
+              <button key={c} onClick={() => setColor(c)}
+                className="w-12 h-12 rounded-xl active:scale-90 transition-all flex items-center justify-center"
+                style={{
+                  backgroundColor: c,
+                  boxShadow: color === c
+                    ? `0 0 0 3px #111827, 0 0 0 5px ${c}`
+                    : 'none',
+                }}
+                aria-label={c}
+              >
+                {color === c && (
+                  <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3"
+                    strokeLinecap="round" strokeLinejoin="round" className="w-6 h-6">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Save */}
+        <button onClick={handleSave} disabled={saving}
+          className="bg-blue-700 hover:bg-blue-600 active:scale-95 disabled:opacity-50 text-white text-xl font-bold py-5 rounded-2xl transition-all">
+          {saving ? 'Saving…' : 'Save Changes'}
+        </button>
+
+        {/* Danger zone */}
+        <div className="border-t border-gray-700 pt-6 flex flex-col gap-4">
+          <p className="text-red-500 text-sm uppercase tracking-widest font-bold">
+            Danger Zone
+          </p>
+
+          {deleteStep === 'idle' ? (
+            <button
+              onClick={() => { setDeleteStep('confirmPin'); setDeletePin(''); setError(null); }}
+              className="border border-red-900 hover:bg-red-950 active:scale-95 text-red-400 text-xl font-semibold py-5 rounded-2xl transition-all"
+            >
+              Delete Account
+            </button>
+          ) : (
+            <div className="flex flex-col gap-4 items-center">
+              <p className="text-gray-300 text-lg text-center">
+                Enter your PIN to confirm. This cannot be undone.
+              </p>
+              <PinDots filled={deletePin.length} />
+              <PinKeypad
+                onDigit={handleDeletePinDigit}
+                onBackspace={() => { setDeletePin((p) => p.slice(0, -1)); setError(null); }}
+              />
+              <button
+                onClick={() => { setDeleteStep('idle'); setDeletePin(''); setError(null); }}
+                className="text-gray-500 hover:text-gray-300 text-lg transition-colors mt-1"
+              >
+                ← Cancel delete
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Sub-components ────────────────────────────────────────────────────────────
+
+function StatTile({ label, value, color }) {
+  return (
+    <div className="bg-gray-800 rounded-2xl p-5 flex flex-col items-center gap-1 overflow-hidden relative">
+      {/* Colored top accent bar */}
+      <div className="absolute top-0 left-0 right-0 h-1 rounded-t-2xl"
+        style={{ backgroundColor: color }} />
+      <span className="text-gray-400 text-sm uppercase tracking-widest font-semibold mt-1">
+        {label}
+      </span>
+      <span className="text-white text-3xl font-bold tabular-nums">{value}</span>
+    </div>
+  );
+}
+
+function WorkoutCard({ workout, color, onDelete }) {
   const [confirming, setConfirming] = useState(false);
   const stats = workout.workout_stats?.[0];
   const label = machineName(workout.machine);
@@ -86,7 +282,8 @@ function WorkoutCard({ workout, onDelete }) {
 
   return (
     <>
-      <div className="bg-gray-800 rounded-2xl p-5 flex flex-col gap-3">
+      <div className="bg-gray-800 rounded-2xl p-5 flex flex-col gap-3"
+        style={{ borderLeft: `4px solid ${color}` }}>
         {/* Machine + date + delete row */}
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <span className={`text-lg font-bold px-3 py-1 rounded-lg ${badgeStyle}`}>
@@ -96,11 +293,9 @@ function WorkoutCard({ workout, onDelete }) {
             <span className="text-gray-400 text-base">
               {formatDate(workout.started_at)} at {formatTimeOfDay(workout.started_at)}
             </span>
-            <button
-              onClick={() => setConfirming(true)}
+            <button onClick={() => setConfirming(true)}
               className="text-gray-600 hover:text-red-400 transition-colors p-1"
-              aria-label="Delete workout"
-            >
+              aria-label="Delete workout">
               <TrashIcon />
             </button>
           </div>
@@ -133,16 +328,12 @@ function WorkoutCard({ workout, onDelete }) {
               {label} — {formatDate(workout.started_at)}
             </p>
             <div className="flex gap-4">
-              <button
-                onClick={() => setConfirming(false)}
-                className="flex-1 bg-gray-700 hover:bg-gray-600 active:scale-95 text-white text-xl font-semibold py-5 rounded-2xl transition-all"
-              >
+              <button onClick={() => setConfirming(false)}
+                className="flex-1 bg-gray-700 hover:bg-gray-600 active:scale-95 text-white text-xl font-semibold py-5 rounded-2xl transition-all">
                 Cancel
               </button>
-              <button
-                onClick={() => { setConfirming(false); onDelete(workout.id); }}
-                className="flex-1 bg-red-700 hover:bg-red-600 active:scale-95 text-white text-xl font-semibold py-5 rounded-2xl transition-all"
-              >
+              <button onClick={() => { setConfirming(false); onDelete(workout.id); }}
+                className="flex-1 bg-red-700 hover:bg-red-600 active:scale-95 text-white text-xl font-semibold py-5 rounded-2xl transition-all">
                 Delete
               </button>
             </div>
@@ -164,9 +355,12 @@ function Stat({ label, value }) {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export default function AthleteDashboard({ athlete, onStartWorkout, onLogout }) {
+export default function AthleteDashboard({ athlete, onAthleteUpdate, onStartWorkout, onLogout }) {
   const [workouts, setWorkouts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showEdit, setShowEdit] = useState(false);
+
+  const color = athlete.color ?? '#3b82f6';
 
   useEffect(() => {
     async function fetchWorkouts() {
@@ -201,11 +395,33 @@ export default function AthleteDashboard({ athlete, onStartWorkout, onLogout }) 
 
   return (
     <div className="min-h-screen bg-gray-950 text-white flex flex-col p-8 gap-6">
+
+      {/* ── Edit Profile Modal ── */}
+      {showEdit && (
+        <EditProfileModal
+          athlete={athlete}
+          onDone={(updated) => { onAthleteUpdate(updated); setShowEdit(false); }}
+          onCancel={() => setShowEdit(false)}
+          onLogout={onLogout}
+        />
+      )}
+
       {/* ── Header ── */}
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-gray-500 text-lg tracking-wide">Gym Tracker</p>
-          <h1 className="text-5xl font-bold tracking-tight mt-1">{athlete.name}</h1>
+          <div className="flex items-center gap-3 mt-1">
+            <h1 className="text-5xl font-bold tracking-tight" style={{ color }}>
+              {athlete.name}
+            </h1>
+            <button
+              onClick={() => setShowEdit(true)}
+              className="text-gray-600 hover:text-gray-400 active:scale-95 transition-all p-1"
+              aria-label="Edit profile"
+            >
+              <GearIcon />
+            </button>
+          </div>
         </div>
         <div className="flex items-center gap-3 pt-1">
           <button
@@ -232,10 +448,10 @@ export default function AthleteDashboard({ athlete, onStartWorkout, onLogout }) 
           {/* ── Summary stats ── */}
           {totalWorkouts > 0 && (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <StatTile label="Workouts" value={totalWorkouts} />
-              <StatTile label="Distance" value={formatDistance(totalDistance)} />
-              <StatTile label="Total Time" value={formatTotalTime(totalSeconds)} />
-              <StatTile label="Best Power" value={bestPower > 0 ? `${bestPower} W` : '—'} />
+              <StatTile label="Workouts" value={totalWorkouts} color={color} />
+              <StatTile label="Distance" value={formatDistance(totalDistance)} color={color} />
+              <StatTile label="Total Time" value={formatTotalTime(totalSeconds)} color={color} />
+              <StatTile label="Best Power" value={bestPower > 0 ? `${bestPower} W` : '—'} color={color} />
             </div>
           )}
 
@@ -250,7 +466,7 @@ export default function AthleteDashboard({ athlete, onStartWorkout, onLogout }) 
               </div>
             ) : (
               workouts.map((w) => (
-                <WorkoutCard key={w.id} workout={w} onDelete={handleDelete} />
+                <WorkoutCard key={w.id} workout={w} color={color} onDelete={handleDelete} />
               ))
             )}
           </div>

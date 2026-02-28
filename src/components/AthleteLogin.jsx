@@ -204,6 +204,7 @@ export default function AthleteLogin({ onLogin }) {
               key={a.id}
               onClick={() => handleAthleteSelect(a)}
               className="bg-gray-800 hover:bg-gray-700 active:scale-95 text-white text-2xl font-semibold py-10 px-4 rounded-2xl transition-all"
+              style={{ borderLeft: `4px solid ${a.color ?? '#3b82f6'}` }}
             >
               {a.name}
             </button>

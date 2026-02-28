@@ -29,6 +29,7 @@ function MainFlow() {
     return (
       <AthleteDashboard
         athlete={athlete}
+        onAthleteUpdate={setAthlete}
         onStartWorkout={() => setScreen('workout')}
         onLogout={handleLogout}
       />
