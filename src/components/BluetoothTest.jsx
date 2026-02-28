@@ -46,14 +46,26 @@ export default function BluetoothTest() {
 
   const connRef = useRef(null);
   const timerRef = useRef(null);
+  // True until the first 'connected' after a full disconnect, so elapsed
+  // resets for a new session but NOT when reconnecting mid-session.
+  const resetElapsedRef = useRef(true);
 
-  // Elapsed-time timer — runs while connected
+  // Elapsed-time timer — keeps running through 'reconnecting' so the session
+  // clock doesn't stutter when BlueZ briefly drops the GATT link.
   useEffect(() => {
     if (status === 'connected') {
-      setElapsed(0);
+      if (resetElapsedRef.current) {
+        setElapsed(0);
+        resetElapsedRef.current = false;
+      }
+      timerRef.current = setInterval(() => setElapsed((s) => s + 1), 1000);
+    } else if (status === 'reconnecting') {
+      // Restart the interval (cleanup stopped it) without resetting elapsed.
       timerRef.current = setInterval(() => setElapsed((s) => s + 1), 1000);
     } else {
+      // 'disconnected' or 'connecting' — stop timer, arm reset for next session.
       clearInterval(timerRef.current);
+      resetElapsedRef.current = true;
     }
     return () => clearInterval(timerRef.current);
   }, [status]);
@@ -85,8 +97,13 @@ export default function BluetoothTest() {
     try {
       const conn = await connectToMachine(
         machineType,
-        (newMetrics) => setMetrics((prev) => ({ ...prev, ...newMetrics })),
-        resetState, // called on unexpected device disconnect
+        (newMetrics) => {
+          // If we were reconnecting, the arrival of new data means we're back.
+          setStatus((s) => (s === 'reconnecting' ? 'connected' : s));
+          setMetrics((prev) => ({ ...prev, ...newMetrics }));
+        },
+        resetState,                          // called only after all reconnect attempts fail
+        () => setStatus('reconnecting'),     // called when a disconnect is detected
       );
       connRef.current = conn;
       setDeviceName(conn.deviceName);
@@ -103,6 +120,7 @@ export default function BluetoothTest() {
 
   const isConnected = status === 'connected';
   const isConnecting = status === 'connecting';
+  const isReconnecting = status === 'reconnecting';
   const isEchoBike = activeMachine === MACHINE_TYPES.ECHO_BIKE;
   const machineName = activeMachine === MACHINE_TYPES.SKI_ERG ? 'Ski Erg' : 'Echo Bike';
 
@@ -129,7 +147,7 @@ export default function BluetoothTest() {
           className={`flex items-center gap-2 px-5 py-2 rounded-full text-lg font-semibold ${
             isConnected
               ? 'bg-green-800 text-green-100'
-              : isConnecting
+              : isConnecting || isReconnecting
                 ? 'bg-yellow-800 text-yellow-100'
                 : 'bg-gray-800 text-gray-400'
           }`}
@@ -138,16 +156,18 @@ export default function BluetoothTest() {
             className={`w-3 h-3 rounded-full ${
               isConnected
                 ? 'bg-green-400'
-                : isConnecting
+                : isConnecting || isReconnecting
                   ? 'bg-yellow-400 animate-pulse'
                   : 'bg-gray-500'
             }`}
           />
           {isConnected
             ? `${machineName} — ${deviceName}`
-            : isConnecting
-              ? 'Connecting…'
-              : 'Not connected'}
+            : isReconnecting
+              ? 'Reconnecting…'
+              : isConnecting
+                ? 'Connecting…'
+                : 'Not connected'}
         </div>
       </div>
 
@@ -159,7 +179,7 @@ export default function BluetoothTest() {
       )}
 
       {/* ── Connect buttons (shown when idle) ── */}
-      {!isConnected && !isConnecting && (
+      {!isConnected && !isConnecting && !isReconnecting && (
         <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mt-16">
           <button
             onClick={() => handleConnect(MACHINE_TYPES.ECHO_BIKE)}
@@ -176,8 +196,8 @@ export default function BluetoothTest() {
         </div>
       )}
 
-      {/* ── Metrics grid (shown when connecting/connected) ── */}
-      {(isConnected || isConnecting) && (
+      {/* ── Metrics grid (shown when connecting/connected/reconnecting) ── */}
+      {(isConnected || isConnecting || isReconnecting) && (
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-5 flex-1">
           <MetricCard
             label="Power"
@@ -209,7 +229,7 @@ export default function BluetoothTest() {
       )}
 
       {/* ── Disconnect button ── */}
-      {isConnected && (
+      {(isConnected || isReconnecting) && (
         <div className="flex justify-center">
           <button
             onClick={handleDisconnect}
@@ -221,14 +241,14 @@ export default function BluetoothTest() {
       )}
 
       {/* ── Browser compatibility note ── */}
-      {!isConnected && !isConnecting && typeof navigator !== 'undefined' && !navigator.bluetooth && (
+      {!isConnected && !isConnecting && !isReconnecting && typeof navigator !== 'undefined' && !navigator.bluetooth && (
         <p className="text-center text-gray-500 text-lg mt-8">
           Web Bluetooth requires Chrome or Edge. Safari and Firefox are not supported.
         </p>
       )}
 
       {/* ── Version indicator ── */}
-      <span className="fixed bottom-2 right-3 text-xs text-gray-600 select-none">v0.1.2</span>
+      <span className="fixed bottom-2 right-3 text-xs text-gray-600 select-none">v0.1.3</span>
     </div>
   );
 }

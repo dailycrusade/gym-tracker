@@ -181,7 +181,7 @@ function shortUuid(uuid) {
 // @param {function} onDisconnect - Called when the device disconnects (expected or unexpected)
 // @returns {Promise<{ deviceName: string, disconnect: function }>}
 // ---------------------------------------------------------------------------
-export async function connectToMachine(machineType, onMetrics, onDisconnect) {
+export async function connectToMachine(machineType, onMetrics, onDisconnect, onReconnecting) {
   if (!navigator.bluetooth) {
     throw new Error(
       'Web Bluetooth is not supported. Use Chrome or Edge, and serve over HTTPS (or localhost).'
@@ -218,28 +218,99 @@ export async function connectToMachine(machineType, onMetrics, onDisconnect) {
     console.log('[bluetooth] Device selected via fallback picker:', device.name);
   }
 
-  // On Linux/BlueZ, gattserverdisconnected fires within milliseconds of
-  // startNotifications() even though the BLE notification channel stays live.
-  // We debounce the callback 3 s and only propagate if the link is still gone,
-  // so a transient GATT drop doesn't reset the UI mid-session.
+  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  // ---------------------------------------------------------------------------
+  // Notification handler — named so the same function reference is reused when
+  // re-registering on a fresh characteristic object after a silent reconnect.
+  // Using the same reference prevents duplicate listeners accumulating.
+  // ---------------------------------------------------------------------------
+  function handleNotification(event) {
+    const dv = event.target.value;
+    const bytes = Array.from({ length: dv.byteLength }, (_, i) =>
+      dv.getUint8(i).toString(16).padStart(2, '0')
+    ).join(' ');
+    console.log('[bluetooth] Raw notification bytes:', bytes);
+    try {
+      const metrics = parseData(dv);
+      console.log('[bluetooth] Parsed metrics:', JSON.stringify(metrics));
+      onMetrics(metrics);
+    } catch (err) {
+      console.warn('[bluetooth] Failed to parse FTMS notification:', err);
+    }
+  }
+
+  // Acquire the target characteristic, attach handleNotification, and start
+  // notifications (with one retry on failure). Shared by initial connect and
+  // silent reconnect so the setup path is identical both times.
+  async function subscribeToCharacteristic(service) {
+    const char = await service.getCharacteristic(charUuid);
+    char.addEventListener('characteristicvaluechanged', handleNotification);
+    console.log('[bluetooth] Subscribing to characteristic:', shortUuid(char.uuid));
+    try {
+      await char.startNotifications();
+    } catch (notifyErr) {
+      console.warn('[bluetooth] startNotifications() failed, retrying in 1 s…', notifyErr.message);
+      await sleep(1000);
+      await char.startNotifications();
+    }
+    console.log('[bluetooth] Notifications started.');
+  }
+
+  // Silently re-establish the full GATT stack without touching the UI.
+  // Returns true on success, false after all attempts are exhausted.
+  async function attemptSilentReconnect() {
+    for (let i = 1; i <= 3; i++) {
+      try {
+        console.log(`[bluetooth] Silent reconnect attempt ${i}/3…`);
+        const server = await device.gatt.connect();
+        await sleep(1000);
+        if (!server.connected) throw new Error('GATT dropped immediately after reconnect');
+        const service = await server.getPrimaryService(FTMS_SERVICE);
+        await subscribeToCharacteristic(service);
+        console.log('[bluetooth] Silent reconnect successful.');
+        return true;
+      } catch (err) {
+        console.warn(`[bluetooth] Silent reconnect ${i}/3 failed:`, err.message);
+        if (i < 3) await sleep(1000);
+      }
+    }
+    return false;
+  }
+
+  // On Linux/BlueZ, gattserverdisconnected fires aggressively — including when
+  // the machine simply goes idle — even though the notification channel may
+  // still be live. Strategy:
+  //   1. Debounce 5 s. If the link recovers naturally, do nothing.
+  //   2. If still gone, call onReconnecting (UI shows "Reconnecting…") and
+  //      attempt up to 3 silent reconnects before giving up.
+  //   3. Only call onDisconnect (return to connect screen) if all 3 fail.
   let fullyConnected = false;
   let disconnectTimer = null;
   device.addEventListener('gattserverdisconnected', () => {
     if (!fullyConnected) return;
-    disconnectTimer = setTimeout(() => {
-      if (!device.gatt.connected) onDisconnect?.();
-    }, 3000);
+    clearTimeout(disconnectTimer);
+    disconnectTimer = setTimeout(async () => {
+      if (device.gatt.connected) return; // recovered within the debounce window
+      console.log('[bluetooth] Still disconnected after 5 s — attempting silent reconnect…');
+      onReconnecting?.();
+      const reconnected = await attemptSilentReconnect();
+      if (!reconnected) {
+        console.warn('[bluetooth] All reconnect attempts failed — returning to connect screen.');
+        fullyConnected = false;
+        onDisconnect?.();
+      }
+    }, 5000);
   });
 
   // --- 2. GATT connection with BlueZ retry loop ---
   //
   // On Linux/BlueZ the GATT server can drop immediately after connect()
-  // resolves — before we even call getPrimaryService(). We wait 1 s after
+  // resolves — before we even call getPrimaryService(). We wait 2 s after
   // connecting, re-connect once if the server dropped in that window, then
   // attempt the full service/characteristic setup. The whole post-connect
   // block retries up to 3 times with 1 s between attempts.
 
-  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   const MAX_ATTEMPTS = 3;
   let lastErr;
 
@@ -247,7 +318,7 @@ export async function connectToMachine(machineType, onMetrics, onDisconnect) {
     try {
       console.log(`[bluetooth] GATT connect attempt ${attempt}/${MAX_ATTEMPTS}…`);
       let server = await device.gatt.connect();
-      console.log('[bluetooth] GATT connected. Waiting 1 s for BlueZ to stabilise…');
+      console.log('[bluetooth] GATT connected. Waiting 2 s for BlueZ to stabilise…');
 
       await sleep(2000);
 
@@ -279,38 +350,14 @@ export async function connectToMachine(machineType, onMetrics, onDisconnect) {
 
       await sleep(500);
 
-      const characteristic = await service.getCharacteristic(charUuid);
-      console.log('[bluetooth] Subscribing to characteristic:', shortUuid(characteristic.uuid));
-
-      characteristic.addEventListener('characteristicvaluechanged', (event) => {
-        const dv = event.target.value;
-        const bytes = Array.from({ length: dv.byteLength }, (_, i) =>
-          dv.getUint8(i).toString(16).padStart(2, '0')
-        ).join(' ');
-        console.log('[bluetooth] Raw notification bytes:', bytes);
-        try {
-          const metrics = parseData(dv);
-          console.log('[bluetooth] Parsed metrics:', JSON.stringify(metrics));
-          onMetrics(metrics);
-        } catch (err) {
-          console.warn('[bluetooth] Failed to parse FTMS notification:', err);
-        }
-      });
-
-      try {
-        await characteristic.startNotifications();
-      } catch (notifyErr) {
-        console.warn('[bluetooth] startNotifications() failed, retrying in 1 s…', notifyErr.message);
-        await sleep(1000);
-        await characteristic.startNotifications();
-      }
-      console.log('[bluetooth] Notifications started. Ready.');
+      await subscribeToCharacteristic(service);
 
       fullyConnected = true;
       return {
         deviceName: device.name ?? 'Unknown Device',
         disconnect() {
           clearTimeout(disconnectTimer);
+          fullyConnected = false;
           if (device.gatt.connected) {
             device.gatt.disconnect();
           }
