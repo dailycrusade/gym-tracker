@@ -228,7 +228,7 @@ export default function BluetoothTest() {
       )}
 
       {/* ── Version indicator ── */}
-      <span className="fixed bottom-2 right-3 text-xs text-gray-600 select-none">v0.1.1</span>
+      <span className="fixed bottom-2 right-3 text-xs text-gray-600 select-none">v0.1.2</span>
     </div>
   );
 }

@@ -249,7 +249,7 @@ export async function connectToMachine(machineType, onMetrics, onDisconnect) {
       let server = await device.gatt.connect();
       console.log('[bluetooth] GATT connected. Waiting 1 s for BlueZ to stabilise…');
 
-      await sleep(1000);
+      await sleep(2000);
 
       // If BlueZ dropped the link during the wait, reconnect once before proceeding.
       if (!server.connected) {
@@ -264,6 +264,8 @@ export async function connectToMachine(machineType, onMetrics, onDisconnect) {
       const service = await server.getPrimaryService(FTMS_SERVICE);
       console.log('[bluetooth] FTMS service (0x1826) obtained.');
 
+      await sleep(500);
+
       // Log every characteristic inside the FTMS service.
       try {
         const allChars = await service.getCharacteristics();
@@ -274,6 +276,8 @@ export async function connectToMachine(machineType, onMetrics, onDisconnect) {
       } catch (charErr) {
         console.warn('[bluetooth] Could not enumerate characteristics:', charErr.message);
       }
+
+      await sleep(500);
 
       const characteristic = await service.getCharacteristic(charUuid);
       console.log('[bluetooth] Subscribing to characteristic:', shortUuid(characteristic.uuid));
@@ -293,7 +297,13 @@ export async function connectToMachine(machineType, onMetrics, onDisconnect) {
         }
       });
 
-      await characteristic.startNotifications();
+      try {
+        await characteristic.startNotifications();
+      } catch (notifyErr) {
+        console.warn('[bluetooth] startNotifications() failed, retrying in 1 s…', notifyErr.message);
+        await sleep(1000);
+        await characteristic.startNotifications();
+      }
       console.log('[bluetooth] Notifications started. Ready.');
 
       fullyConnected = true;
