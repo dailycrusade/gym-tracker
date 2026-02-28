@@ -226,6 +226,9 @@ export default function BluetoothTest() {
           Web Bluetooth requires Chrome or Edge. Safari and Firefox are not supported.
         </p>
       )}
+
+      {/* ── Version indicator ── */}
+      <span className="fixed bottom-2 right-3 text-xs text-gray-600 select-none">v0.1.0</span>
     </div>
   );
 }
