@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { machineName } from '../lib/utils';
 import Footer from './Footer';
@@ -430,6 +431,12 @@ export default function AthleteDashboard({ athlete, onAthleteUpdate, onStartWork
           >
             Start Workout →
           </button>
+          <Link
+            to="/leaderboard"
+            className="bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-gray-200 text-lg font-medium py-3 px-5 rounded-xl transition-all"
+          >
+            Leaderboard
+          </Link>
           <button
             onClick={onLogout}
             className="bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-gray-200 text-lg font-medium py-3 px-5 rounded-xl transition-all"
