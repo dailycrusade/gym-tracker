@@ -218,11 +218,17 @@ export async function connectToMachine(machineType, onMetrics, onDisconnect) {
     console.log('[bluetooth] Device selected via fallback picker:', device.name);
   }
 
-  // gattserverdisconnected fires for unexpected drops; we only forward it to
-  // the caller once the connection is fully established (flag set below).
+  // On Linux/BlueZ, gattserverdisconnected fires within milliseconds of
+  // startNotifications() even though the BLE notification channel stays live.
+  // We debounce the callback 3 s and only propagate if the link is still gone,
+  // so a transient GATT drop doesn't reset the UI mid-session.
   let fullyConnected = false;
+  let disconnectTimer = null;
   device.addEventListener('gattserverdisconnected', () => {
-    if (fullyConnected) onDisconnect?.();
+    if (!fullyConnected) return;
+    disconnectTimer = setTimeout(() => {
+      if (!device.gatt.connected) onDisconnect?.();
+    }, 3000);
   });
 
   // --- 2. GATT connection with BlueZ retry loop ---
@@ -279,7 +285,9 @@ export async function connectToMachine(machineType, onMetrics, onDisconnect) {
         ).join(' ');
         console.log('[bluetooth] Raw notification bytes:', bytes);
         try {
-          onMetrics(parseData(dv));
+          const metrics = parseData(dv);
+          console.log('[bluetooth] Parsed metrics:', JSON.stringify(metrics));
+          onMetrics(metrics);
         } catch (err) {
           console.warn('[bluetooth] Failed to parse FTMS notification:', err);
         }
@@ -292,6 +300,7 @@ export async function connectToMachine(machineType, onMetrics, onDisconnect) {
       return {
         deviceName: device.name ?? 'Unknown Device',
         disconnect() {
+          clearTimeout(disconnectTimer);
           if (device.gatt.connected) {
             device.gatt.disconnect();
           }

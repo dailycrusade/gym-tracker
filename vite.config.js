@@ -7,4 +7,9 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  server: {
+    // HMR page reloads drop the Bluetooth connection mid-session.
+    // Re-enable with VITE_HMR=1 if you need live reload while developing.
+    hmr: !!process.env.VITE_HMR,
+  },
 })
