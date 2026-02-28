@@ -58,6 +58,8 @@ export default function BluetoothTest({ athlete, onLogout, onWorkoutDone }) {
   const wattsHistoryRef = useRef([]);
   const cadenceHistoryRef = useRef([]);
   const workoutStartRef = useRef(null);
+  // Supabase row id for the in-progress workout (set on connect, cleared on save/cancel)
+  const workoutIdRef = useRef(null);
 
   // Elapsed-time timer — keeps running through 'reconnecting' so the session
   // clock doesn't stutter when BlueZ briefly drops the GATT link.
@@ -88,6 +90,12 @@ export default function BluetoothTest({ athlete, onLogout, onWorkoutDone }) {
   }, []);
 
   function resetState() {
+    // If a workout row was created but never saved, mark it cancelled
+    // (covers BLE failure after all reconnect attempts).
+    if (workoutIdRef.current) {
+      supabase.from('workouts').update({ cancelled: true }).eq('id', workoutIdRef.current);
+      workoutIdRef.current = null;
+    }
     setStatus('disconnected');
     setMetrics(INITIAL_METRICS);
     setActiveMachine(null);
@@ -100,6 +108,11 @@ export default function BluetoothTest({ athlete, onLogout, onWorkoutDone }) {
 
   function handleLogout() {
     connRef.current?.disconnect();
+    // Mark in-progress workout as cancelled — fire and forget, don't block logout
+    if (workoutIdRef.current) {
+      supabase.from('workouts').update({ cancelled: true }).eq('id', workoutIdRef.current);
+      workoutIdRef.current = null;
+    }
     resetState();
     onLogout();
   }
@@ -129,6 +142,14 @@ export default function BluetoothTest({ athlete, onLogout, onWorkoutDone }) {
       workoutStartRef.current = new Date().toISOString();
       wattsHistoryRef.current = [];
       cadenceHistoryRef.current = [];
+
+      // Create the workout row immediately so Hub shows this as an active session
+      const { data: newWorkout } = await supabase
+        .from('workouts')
+        .insert({ athlete_id: athlete.id, machine: machineType, started_at: workoutStartRef.current })
+        .select('id')
+        .single();
+      workoutIdRef.current = newWorkout?.id ?? null;
     } catch (err) {
       setStatus('disconnected');
       // NotFoundError / AbortError = user closed the picker — not an error worth showing
@@ -156,25 +177,44 @@ export default function BluetoothTest({ athlete, onLogout, onWorkoutDone }) {
       ? Math.round(cadenceArr.reduce((a, b) => a + b, 0) / cadenceArr.length)
       : null;
 
+    // Grab and clear the workout id before any async work so resetState
+    // (if called concurrently by BLE failure) doesn't double-cancel.
+    const workoutId = workoutIdRef.current;
+    workoutIdRef.current = null;
+
     // Disconnect BLE — show overlay while saving so the user sees feedback
     connRef.current?.disconnect();
     connRef.current = null;
     setSaveState('saving');
 
     try {
-      const { data: workout, error: workoutErr } = await supabase
-        .from('workouts')
-        .insert({
-          athlete_id: athlete.id,
-          machine,
-          started_at: workoutStartRef.current,
-          ended_at: endedAt.toISOString(),
-          duration_seconds: totalSeconds,
-        })
-        .select()
-        .single();
-
-      if (workoutErr) throw workoutErr;
+      let workout;
+      if (workoutId) {
+        // Normal path: update the row created on connect
+        const { data, error: workoutErr } = await supabase
+          .from('workouts')
+          .update({ ended_at: endedAt.toISOString(), duration_seconds: totalSeconds })
+          .eq('id', workoutId)
+          .select()
+          .single();
+        if (workoutErr) throw workoutErr;
+        workout = data;
+      } else {
+        // Fallback: on-connect insert failed, so do a full insert now
+        const { data, error: workoutErr } = await supabase
+          .from('workouts')
+          .insert({
+            athlete_id: athlete.id,
+            machine,
+            started_at: workoutStartRef.current,
+            ended_at: endedAt.toISOString(),
+            duration_seconds: totalSeconds,
+          })
+          .select()
+          .single();
+        if (workoutErr) throw workoutErr;
+        workout = data;
+      }
 
       const { error: statsErr } = await supabase
         .from('workout_stats')

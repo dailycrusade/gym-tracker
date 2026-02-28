@@ -134,11 +134,12 @@ export default function Hub() {
       const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString();
 
       const [activeRes, weekRes, recentRes] = await Promise.all([
-        // Active sessions: no ended_at, started within last 2 hours
+        // Active sessions: no ended_at, not cancelled, started within last 2 hours
         supabase
           .from('workouts')
           .select('id, athlete_id, machine, started_at, athletes(name, color)')
           .is('ended_at', null)
+          .eq('cancelled', false)
           .gte('started_at', twoHoursAgo),
 
         // This week's completed workouts for leaderboard
