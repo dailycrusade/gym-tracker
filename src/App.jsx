@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Routes, Route } from 'react-router-dom';
+import Hub from './components/Hub';
 import AthleteLogin from './components/AthleteLogin';
 import AthleteDashboard from './components/AthleteDashboard';
 import BluetoothTest from './components/BluetoothTest';
@@ -48,7 +49,8 @@ function MainFlow() {
 export default function App() {
   return (
     <Routes>
-      <Route path="/" element={<MainFlow />} />
+      <Route path="/" element={<Hub />} />
+      <Route path="/athlete" element={<MainFlow />} />
       <Route path="/leaderboard" element={<Leaderboard />} />
       <Route path="/display/:machine" element={<MachineDisplay />} />
     </Routes>
