@@ -218,58 +218,94 @@ export async function connectToMachine(machineType, onMetrics, onDisconnect) {
     console.log('[bluetooth] Device selected via fallback picker:', device.name);
   }
 
+  // gattserverdisconnected fires for unexpected drops; we only forward it to
+  // the caller once the connection is fully established (flag set below).
+  let fullyConnected = false;
   device.addEventListener('gattserverdisconnected', () => {
-    onDisconnect?.();
+    if (fullyConnected) onDisconnect?.();
   });
 
-  // --- 2. GATT connection + service/characteristic discovery logging ---
+  // --- 2. GATT connection with BlueZ retry loop ---
+  //
+  // On Linux/BlueZ the GATT server can drop immediately after connect()
+  // resolves — before we even call getPrimaryService(). We wait 1 s after
+  // connecting, re-connect once if the server dropped in that window, then
+  // attempt the full service/characteristic setup. The whole post-connect
+  // block retries up to 3 times with 1 s between attempts.
 
-  console.log('[bluetooth] Connecting to GATT server on:', device.name);
-  const server = await device.gatt.connect();
-  console.log('[bluetooth] GATT connected.');
+  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  const MAX_ATTEMPTS = 3;
+  let lastErr;
 
-  // NOTE: getPrimaryServices() with no args is intentionally omitted here.
-  // On Linux/BlueZ it triggers a full GATT service discovery that the Rogue
-  // rejects, silently killing the connection before we can use it.
-  const service = await server.getPrimaryService(FTMS_SERVICE);
-  console.log('[bluetooth] FTMS service (0x1826) obtained.');
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      console.log(`[bluetooth] GATT connect attempt ${attempt}/${MAX_ATTEMPTS}…`);
+      let server = await device.gatt.connect();
+      console.log('[bluetooth] GATT connected. Waiting 1 s for BlueZ to stabilise…');
 
-  // Log every characteristic inside the FTMS service.
-  try {
-    const allChars = await service.getCharacteristics();
-    console.log(
-      '[bluetooth] Characteristics in FTMS service:',
-      allChars.map((c) => shortUuid(c.uuid))
-    );
-  } catch (charErr) {
-    console.warn('[bluetooth] Could not enumerate characteristics:', charErr.message);
+      await sleep(1000);
+
+      // If BlueZ dropped the link during the wait, reconnect once before proceeding.
+      if (!server.connected) {
+        console.warn('[bluetooth] GATT dropped during stabilisation delay — reconnecting…');
+        server = await device.gatt.connect();
+        console.log('[bluetooth] GATT reconnected.');
+      }
+
+      // NOTE: getPrimaryServices() with no args is intentionally omitted here.
+      // On Linux/BlueZ it triggers a full GATT service discovery that the Rogue
+      // rejects, silently killing the connection before we can use it.
+      const service = await server.getPrimaryService(FTMS_SERVICE);
+      console.log('[bluetooth] FTMS service (0x1826) obtained.');
+
+      // Log every characteristic inside the FTMS service.
+      try {
+        const allChars = await service.getCharacteristics();
+        console.log(
+          '[bluetooth] Characteristics in FTMS service:',
+          allChars.map((c) => shortUuid(c.uuid))
+        );
+      } catch (charErr) {
+        console.warn('[bluetooth] Could not enumerate characteristics:', charErr.message);
+      }
+
+      const characteristic = await service.getCharacteristic(charUuid);
+      console.log('[bluetooth] Subscribing to characteristic:', shortUuid(characteristic.uuid));
+
+      characteristic.addEventListener('characteristicvaluechanged', (event) => {
+        const dv = event.target.value;
+        const bytes = Array.from({ length: dv.byteLength }, (_, i) =>
+          dv.getUint8(i).toString(16).padStart(2, '0')
+        ).join(' ');
+        console.log('[bluetooth] Raw notification bytes:', bytes);
+        try {
+          onMetrics(parseData(dv));
+        } catch (err) {
+          console.warn('[bluetooth] Failed to parse FTMS notification:', err);
+        }
+      });
+
+      await characteristic.startNotifications();
+      console.log('[bluetooth] Notifications started. Ready.');
+
+      fullyConnected = true;
+      return {
+        deviceName: device.name ?? 'Unknown Device',
+        disconnect() {
+          if (device.gatt.connected) {
+            device.gatt.disconnect();
+          }
+        },
+      };
+    } catch (err) {
+      lastErr = err;
+      console.warn(`[bluetooth] Attempt ${attempt} failed:`, err.message);
+      if (attempt < MAX_ATTEMPTS) {
+        console.log('[bluetooth] Waiting 1 s before next attempt…');
+        await sleep(1000);
+      }
+    }
   }
 
-  const characteristic = await service.getCharacteristic(charUuid);
-  console.log('[bluetooth] Subscribing to characteristic:', shortUuid(characteristic.uuid));
-
-  characteristic.addEventListener('characteristicvaluechanged', (event) => {
-    const dv = event.target.value;
-    const bytes = Array.from({ length: dv.byteLength }, (_, i) =>
-      dv.getUint8(i).toString(16).padStart(2, '0')
-    ).join(' ');
-    console.log('[bluetooth] Raw notification bytes:', bytes);
-    try {
-      onMetrics(parseData(dv));
-    } catch (err) {
-      console.warn('[bluetooth] Failed to parse FTMS notification:', err);
-    }
-  });
-
-  await characteristic.startNotifications();
-  console.log('[bluetooth] Notifications started. Ready.');
-
-  return {
-    deviceName: device.name ?? 'Unknown Device',
-    disconnect() {
-      if (device.gatt.connected) {
-        device.gatt.disconnect();
-      }
-    },
-  };
+  throw lastErr;
 }
