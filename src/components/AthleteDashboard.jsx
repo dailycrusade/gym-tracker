@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { machineName } from '../lib/utils';
+import { calculateCurrentStreak, calculateLongestStreak } from '../lib/streaks';
 import Footer from './Footer';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -258,7 +259,7 @@ function EditProfileModal({ athlete, onDone, onCancel, onLogout }) {
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-function StatTile({ label, value, color }) {
+function StatTile({ label, value, sub, color }) {
   return (
     <div className="bg-gray-800 rounded-2xl p-5 flex flex-col items-center gap-1 overflow-hidden relative">
       {/* Colored top accent bar */}
@@ -268,6 +269,7 @@ function StatTile({ label, value, color }) {
         {label}
       </span>
       <span className="text-white text-3xl font-bold tabular-nums">{value}</span>
+      {sub && <span className="text-gray-500 text-sm">{sub}</span>}
     </div>
   );
 }
@@ -393,6 +395,8 @@ export default function AthleteDashboard({ athlete, onAthleteUpdate, onStartWork
     const p = w.workout_stats?.[0]?.max_watts;
     return p != null && Number(p) > best ? Number(p) : best;
   }, 0);
+  const currentStreak = useMemo(() => calculateCurrentStreak(workouts), [workouts]);
+  const longestStreak = useMemo(() => calculateLongestStreak(workouts), [workouts]);
 
   return (
     <div className="min-h-screen bg-gray-950 text-white flex flex-col p-8 gap-6">
@@ -454,11 +458,23 @@ export default function AthleteDashboard({ athlete, onAthleteUpdate, onStartWork
         <>
           {/* ── Summary stats ── */}
           {totalWorkouts > 0 && (
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
               <StatTile label="Workouts" value={totalWorkouts} color={color} />
               <StatTile label="Distance" value={formatDistance(totalDistance)} color={color} />
               <StatTile label="Total Time" value={formatTotalTime(totalSeconds)} color={color} />
               <StatTile label="Best Power" value={bestPower > 0 ? `${bestPower} W` : '—'} color={color} />
+              <StatTile
+                label="Current Streak"
+                value={currentStreak === 0 ? 'Start today!' : `🔥 ${currentStreak}`}
+                sub={currentStreak > 0 ? 'days' : undefined}
+                color={color}
+              />
+              <StatTile
+                label="Best Streak"
+                value={longestStreak === 0 ? '—' : `⭐ ${longestStreak}`}
+                sub={longestStreak > 0 ? 'days' : undefined}
+                color={color}
+              />
             </div>
           )}
 

@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { machineName } from '../lib/utils';
+import { calculateCurrentStreak, calculateLongestStreak } from '../lib/streaks';
 import Footer from './Footer';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -166,6 +167,23 @@ function WorkoutsRow({ entry, rank }) {
   );
 }
 
+function StreakRow({ entry, rank }) {
+  return (
+    <RowShell>
+      <Rank n={rank} />
+      <AthleteName athlete={entry.athlete} />
+      <div className="ml-auto flex flex-col items-end shrink-0">
+        <span className="text-2xl font-semibold tabular-nums text-white">
+          {entry.current} days
+        </span>
+        <span className="text-gray-500 text-sm tabular-nums">
+          Best: {entry.longest}
+        </span>
+      </div>
+    </RowShell>
+  );
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 const PERIOD_TABS = [
@@ -193,7 +211,7 @@ export default function Leaderboard() {
       let query = supabase
         .from('workouts')
         .select(
-          'id, athlete_id, machine, duration_seconds, ' +
+          'id, athlete_id, machine, duration_seconds, ended_at, ' +
           'athletes(id, name, color), ' +
           'workout_stats(distance_meters, avg_watts)'
         );
@@ -253,6 +271,24 @@ export default function Leaderboard() {
     return Object.values(map).sort((a, b) => b.count - a.count).slice(0, 10);
   }, [rows]);
 
+  const streakRanking = useMemo(() => {
+    const byAthlete = {};
+    rows.forEach((w) => {
+      const id = w.athlete_id;
+      if (!byAthlete[id]) byAthlete[id] = { athlete: w.athletes, workouts: [] };
+      byAthlete[id].workouts.push(w);
+    });
+    return Object.values(byAthlete)
+      .map(({ athlete, workouts }) => ({
+        athlete,
+        current: calculateCurrentStreak(workouts),
+        longest: calculateLongestStreak(workouts),
+      }))
+      .filter((e) => e.current > 0)
+      .sort((a, b) => b.current - a.current || b.longest - a.longest)
+      .slice(0, 10);
+  }, [rows]);
+
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
@@ -280,7 +316,7 @@ export default function Leaderboard() {
           Loading…
         </div>
       ) : (
-        <div className="grid gap-10 lg:grid-cols-3">
+        <div className="grid gap-10 lg:grid-cols-4">
 
           {/* Most Distance */}
           <div className="flex flex-col gap-2">
@@ -313,6 +349,16 @@ export default function Leaderboard() {
             {workoutsRanking.length === 0 ? <EmptyRows /> : (
               workoutsRanking.map((entry, i) => (
                 <WorkoutsRow key={entry.athlete.id} entry={entry} rank={i + 1} />
+              ))
+            )}
+          </div>
+
+          {/* Longest Active Streak */}
+          <div className="flex flex-col gap-2">
+            <SectionDivider title="Longest Active Streak" />
+            {streakRanking.length === 0 ? <EmptyRows /> : (
+              streakRanking.map((entry, i) => (
+                <StreakRow key={entry.athlete.id} entry={entry} rank={i + 1} />
               ))
             )}
           </div>
