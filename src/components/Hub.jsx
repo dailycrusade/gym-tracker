@@ -202,13 +202,13 @@ export default function Hub() {
     <div className="min-h-screen bg-gray-950 text-white flex flex-col">
 
       {/* ── Top bar ── */}
-      <div className="bg-gray-900 border-b border-gray-800 px-8 py-5 grid grid-cols-3 items-center">
-        <h1 className="text-3xl font-black tracking-tight">Miller's Garage</h1>
+      <div className="bg-gray-900 border-b border-gray-800 px-4 sm:px-8 py-3 sm:py-5 flex flex-col sm:grid sm:grid-cols-3 items-center gap-1 sm:gap-0">
+        <h1 className="text-xl sm:text-3xl font-black tracking-tight">Miller's Garage</h1>
         <div className="flex flex-col items-center">
-          <p className="text-5xl font-bold tabular-nums leading-none">{timeStr}</p>
-          <p className="text-gray-400 text-lg mt-2">{dateStr}</p>
+          <p className="text-3xl sm:text-5xl font-bold tabular-nums leading-none">{timeStr}</p>
+          <p className="text-gray-400 text-sm sm:text-lg mt-1 sm:mt-2">{dateStr}</p>
         </div>
-        <div /> {/* right balance column */}
+        <div className="hidden sm:block" />
       </div>
 
       {loading ? (
@@ -216,10 +216,10 @@ export default function Hub() {
           Loading…
         </div>
       ) : (
-        <div className="flex-1 flex flex-col p-8 gap-6">
+        <div className="flex-1 flex flex-col p-4 sm:p-6 lg:p-8 gap-4 sm:gap-6">
 
           {/* ── Active sessions + This Week ── */}
-          <div className="grid lg:grid-cols-2 gap-6">
+          <div className="grid lg:grid-cols-2 gap-4 sm:gap-6">
 
             {/* Active Sessions */}
             <div className="bg-gray-900 rounded-2xl p-6">
@@ -235,15 +235,15 @@ export default function Hub() {
                         style={{ backgroundColor: w.athletes?.color ?? '#3b82f6' }}
                       />
                       <span
-                        className="text-2xl font-bold truncate"
+                        className="text-lg sm:text-2xl font-bold truncate"
                         style={{ color: w.athletes?.color ?? '#3b82f6' }}
                       >
                         {w.athletes?.name}
                       </span>
-                      <span className="text-gray-400 text-lg shrink-0">
+                      <span className="text-gray-400 text-base sm:text-lg shrink-0">
                         {machineName(w.machine)}
                       </span>
-                      <span className="ml-auto text-2xl font-semibold tabular-nums shrink-0">
+                      <span className="ml-auto text-lg sm:text-2xl font-semibold tabular-nums shrink-0">
                         {fmtElapsed(w.started_at, now)}
                       </span>
                     </div>
@@ -255,22 +255,22 @@ export default function Hub() {
             {/* This Week's Leaderboard */}
             <div className="bg-gray-900 rounded-2xl p-6">
               <PanelHeader title="This Week" />
-              <div className="grid grid-cols-4 gap-6">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
 
                 <div>
-                  <p className="text-gray-600 text-xs uppercase tracking-widest mb-4">Distance</p>
+                  <p className="text-gray-600 text-xs uppercase tracking-widest mb-2 sm:mb-4">Distance</p>
                   {distanceTop3.length === 0 ? (
-                    <p className="text-gray-700 text-lg">No data</p>
+                    <p className="text-gray-700 text-base">No data</p>
                   ) : (
-                    <div className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-2 sm:gap-4">
                       {distanceTop3.map((e, i) => (
                         <div key={e.athlete.id} className="flex items-center gap-2">
                           <RankBadge n={i + 1} />
-                          <span className="text-lg font-bold truncate"
+                          <span className="text-sm sm:text-lg font-bold truncate"
                             style={{ color: e.athlete.color ?? '#3b82f6' }}>
                             {e.athlete.name}
                           </span>
-                          <span className="ml-auto text-lg font-semibold tabular-nums shrink-0">
+                          <span className="ml-auto text-sm sm:text-lg font-semibold tabular-nums shrink-0">
                             {fmtDistance(e.total)}
                           </span>
                         </div>
@@ -280,19 +280,19 @@ export default function Hub() {
                 </div>
 
                 <div>
-                  <p className="text-gray-600 text-xs uppercase tracking-widest mb-4">Avg Power</p>
+                  <p className="text-gray-600 text-xs uppercase tracking-widest mb-2 sm:mb-4">Avg Power</p>
                   {powerTop3.length === 0 ? (
-                    <p className="text-gray-700 text-lg">No data</p>
+                    <p className="text-gray-700 text-base">No data</p>
                   ) : (
-                    <div className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-2 sm:gap-4">
                       {powerTop3.map((e, i) => (
                         <div key={e.athlete.id} className="flex items-center gap-2">
                           <RankBadge n={i + 1} />
-                          <span className="text-lg font-bold truncate"
+                          <span className="text-sm sm:text-lg font-bold truncate"
                             style={{ color: e.athlete.color ?? '#3b82f6' }}>
                             {e.athlete.name}
                           </span>
-                          <span className="ml-auto text-lg font-semibold tabular-nums shrink-0">
+                          <span className="ml-auto text-sm sm:text-lg font-semibold tabular-nums shrink-0">
                             {e.watts} W
                           </span>
                         </div>
@@ -302,19 +302,19 @@ export default function Hub() {
                 </div>
 
                 <div>
-                  <p className="text-gray-600 text-xs uppercase tracking-widest mb-4">Peak Power</p>
+                  <p className="text-gray-600 text-xs uppercase tracking-widest mb-2 sm:mb-4">Peak Power</p>
                   {peakPowerTop3.length === 0 ? (
-                    <p className="text-gray-700 text-lg">No data</p>
+                    <p className="text-gray-700 text-base">No data</p>
                   ) : (
-                    <div className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-2 sm:gap-4">
                       {peakPowerTop3.map((e, i) => (
                         <div key={e.athlete.id} className="flex items-center gap-2">
                           <RankBadge n={i + 1} />
-                          <span className="text-lg font-bold truncate"
+                          <span className="text-sm sm:text-lg font-bold truncate"
                             style={{ color: e.athlete.color ?? '#3b82f6' }}>
                             {e.athlete.name}
                           </span>
-                          <span className="ml-auto text-lg font-semibold tabular-nums shrink-0">
+                          <span className="ml-auto text-sm sm:text-lg font-semibold tabular-nums shrink-0">
                             {e.watts} W
                           </span>
                         </div>
@@ -324,19 +324,19 @@ export default function Hub() {
                 </div>
 
                 <div>
-                  <p className="text-gray-600 text-xs uppercase tracking-widest mb-4">Streak</p>
+                  <p className="text-gray-600 text-xs uppercase tracking-widest mb-2 sm:mb-4">Streak</p>
                   {streakTop3.length === 0 ? (
-                    <p className="text-gray-700 text-lg">No data</p>
+                    <p className="text-gray-700 text-base">No data</p>
                   ) : (
-                    <div className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-2 sm:gap-4">
                       {streakTop3.map((e, i) => (
                         <div key={e.athlete.id} className="flex items-center gap-2">
                           <RankBadge n={i + 1} />
-                          <span className="text-lg font-bold truncate"
+                          <span className="text-sm sm:text-lg font-bold truncate"
                             style={{ color: e.athlete.color ?? '#3b82f6' }}>
                             {e.athlete.name}
                           </span>
-                          <span className="ml-auto text-lg font-semibold tabular-nums shrink-0">
+                          <span className="ml-auto text-sm sm:text-lg font-semibold tabular-nums shrink-0">
                             🔥 {e.current}d
                           </span>
                         </div>
@@ -360,23 +360,23 @@ export default function Hub() {
                   const stats = w.workout_stats?.[0];
                   const dist = fmtDistance(stats?.distance_meters);
                   return (
-                    <div key={w.id} className="flex items-center gap-3 flex-wrap">
-                      <span className="text-xl font-bold shrink-0"
+                    <div key={w.id} className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                      <span className="text-base sm:text-xl font-bold shrink-0"
                         style={{ color: w.athletes?.color ?? '#3b82f6' }}>
                         {w.athletes?.name}
                       </span>
-                      <span className="text-gray-500 text-lg shrink-0">
+                      <span className="text-gray-500 text-sm sm:text-lg shrink-0">
                         {machineName(w.machine)}
                       </span>
                       {dist && (
-                        <span className="text-gray-400 text-lg shrink-0">{dist}</span>
+                        <span className="text-gray-400 text-sm sm:text-lg shrink-0">{dist}</span>
                       )}
                       {stats?.avg_watts != null && (
-                        <span className="text-gray-400 text-lg shrink-0">
+                        <span className="text-gray-400 text-sm sm:text-lg shrink-0">
                           {stats.avg_watts} W avg
                         </span>
                       )}
-                      <span className="ml-auto text-gray-600 text-base shrink-0">
+                      <span className="ml-auto text-gray-600 text-xs sm:text-base shrink-0">
                         {timeAgo(w.ended_at)}
                       </span>
                     </div>
@@ -387,13 +387,13 @@ export default function Hub() {
           </div>
 
           {/* ── Big nav buttons ── */}
-          <div className="flex gap-6">
+          <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
             <Link to="/athlete"
-              className="flex-1 bg-blue-700 hover:bg-blue-600 active:scale-95 text-white text-3xl font-bold py-8 rounded-2xl transition-all text-center shadow-xl">
+              className="flex-1 bg-blue-700 hover:bg-blue-600 active:scale-95 text-white text-xl sm:text-2xl lg:text-3xl font-bold py-5 sm:py-8 rounded-2xl transition-all text-center shadow-xl">
               Athlete Login
             </Link>
             <Link to="/leaderboard"
-              className="flex-1 bg-gray-800 hover:bg-gray-700 active:scale-95 text-white text-3xl font-bold py-8 rounded-2xl transition-all text-center">
+              className="flex-1 bg-gray-800 hover:bg-gray-700 active:scale-95 text-white text-xl sm:text-2xl lg:text-3xl font-bold py-5 sm:py-8 rounded-2xl transition-all text-center">
               Leaderboard
             </Link>
           </div>

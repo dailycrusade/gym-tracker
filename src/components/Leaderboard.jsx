@@ -74,7 +74,7 @@ function Rank({ n }) {
 function AthleteName({ athlete }) {
   return (
     <span
-      className="text-2xl font-bold truncate"
+      className="text-lg sm:text-2xl font-bold truncate"
       style={{ color: athlete?.color ?? '#3b82f6' }}
     >
       {athlete?.name ?? '—'}
@@ -101,12 +101,12 @@ function EmptyRows() {
 
 function TabBar({ options, value, onChange }) {
   return (
-    <div className="flex gap-1 bg-gray-900 rounded-xl p-1">
+    <div className="flex gap-1 bg-gray-900 rounded-xl p-1 overflow-x-auto">
       {options.map((opt) => (
         <button
           key={opt.value}
           onClick={() => onChange(opt.value)}
-          className={`flex-1 py-2.5 px-3 rounded-lg text-base font-semibold transition-all ${
+          className={`flex-1 min-w-[72px] py-2.5 px-3 rounded-lg text-sm sm:text-base font-semibold transition-all whitespace-nowrap min-h-[44px] ${
             value === opt.value
               ? 'bg-gray-700 text-white'
               : 'text-gray-500 hover:text-gray-300'
@@ -134,7 +134,7 @@ function DistanceRow({ entry, rank }) {
     <RowShell>
       <Rank n={rank} />
       <AthleteName athlete={entry.athlete} />
-      <span className="ml-auto text-2xl font-semibold tabular-nums text-white shrink-0">
+      <span className="ml-auto text-lg sm:text-2xl font-semibold tabular-nums text-white shrink-0">
         {fmtDistance(entry.total)}
       </span>
     </RowShell>
@@ -151,7 +151,7 @@ function PowerRow({ entry, rank, showMachine }) {
           {machineName(entry.machine)}
         </span>
       )}
-      <span className="ml-auto text-2xl font-semibold tabular-nums text-white shrink-0">
+      <span className="ml-auto text-lg sm:text-2xl font-semibold tabular-nums text-white shrink-0">
         {entry.watts} W
       </span>
     </RowShell>
@@ -164,7 +164,7 @@ function StreakRow({ entry, rank }) {
       <Rank n={rank} />
       <AthleteName athlete={entry.athlete} />
       <div className="ml-auto flex flex-col items-end shrink-0">
-        <span className="text-2xl font-semibold tabular-nums text-white">
+        <span className="text-lg sm:text-2xl font-semibold tabular-nums text-white">
           {entry.current} days
         </span>
         <span className="text-gray-500 text-sm tabular-nums">
@@ -181,7 +181,7 @@ function PeakPowerRow({ entry, rank, showMachine }) {
       <Rank n={rank} />
       <AthleteName athlete={entry.athlete} />
       <div className="ml-auto flex flex-col items-end shrink-0">
-        <span className="text-2xl font-semibold tabular-nums text-white">
+        <span className="text-lg sm:text-2xl font-semibold tabular-nums text-white">
           {entry.watts} W
         </span>
         <span className="text-gray-500 text-sm">
@@ -302,11 +302,11 @@ export default function Leaderboard() {
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white flex flex-col p-8 gap-6">
+    <div className="min-h-screen bg-gray-950 text-white flex flex-col p-4 sm:p-6 lg:p-8 gap-4 sm:gap-6">
 
       {/* Header */}
       <div className="flex items-center justify-between gap-4">
-        <h1 className="text-4xl font-bold tracking-tight">Leaderboard</h1>
+        <h1 className="text-2xl sm:text-4xl font-bold tracking-tight">Leaderboard</h1>
         <Link
           to="/"
           className="text-gray-500 hover:text-gray-300 text-lg font-medium transition-colors"
@@ -326,7 +326,7 @@ export default function Leaderboard() {
           Loading…
         </div>
       ) : (
-        <div className="grid gap-10 lg:grid-cols-4">
+        <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
 
           {/* Most Distance */}
           <div className="flex flex-col gap-2">

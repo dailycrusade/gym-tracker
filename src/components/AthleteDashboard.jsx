@@ -160,8 +160,8 @@ function EditProfileModal({ athlete, onDone, onCancel, onLogout }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/75 z-50 flex items-start justify-center p-4 overflow-y-auto">
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl w-full max-w-md flex flex-col gap-6 p-8 my-8">
+    <div className="fixed inset-0 bg-black/75 z-50 flex items-end sm:items-start justify-center sm:p-4 overflow-y-auto">
+      <div className="bg-gray-900 border border-gray-800 rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md flex flex-col gap-5 sm:gap-6 p-6 sm:p-8 sm:my-8">
 
         {/* Title + close */}
         <div className="flex items-center justify-between">
@@ -399,7 +399,7 @@ export default function AthleteDashboard({ athlete, onAthleteUpdate, onStartWork
   const longestStreak = useMemo(() => calculateLongestStreak(workouts), [workouts]);
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white flex flex-col p-8 gap-6">
+    <div className="min-h-screen bg-gray-950 text-white flex flex-col p-4 sm:p-6 lg:p-8 gap-4 sm:gap-6">
 
       {/* ── Edit Profile Modal ── */}
       {showEdit && (
@@ -412,11 +412,11 @@ export default function AthleteDashboard({ athlete, onAthleteUpdate, onStartWork
       )}
 
       {/* ── Header ── */}
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
         <div>
-          <p className="text-gray-500 text-lg tracking-wide">Gym Tracker</p>
+          <p className="text-gray-500 text-base sm:text-lg tracking-wide">Gym Tracker</p>
           <div className="flex items-center gap-3 mt-1">
-            <h1 className="text-5xl font-bold tracking-tight" style={{ color }}>
+            <h1 className="text-3xl sm:text-5xl font-bold tracking-tight" style={{ color }}>
               {athlete.name}
             </h1>
             <button
@@ -428,25 +428,27 @@ export default function AthleteDashboard({ athlete, onAthleteUpdate, onStartWork
             </button>
           </div>
         </div>
-        <div className="flex items-center gap-3 pt-1">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 pt-0 sm:pt-1">
           <button
             onClick={onStartWorkout}
-            className="bg-green-700 hover:bg-green-600 active:scale-95 text-white text-2xl font-bold py-4 px-10 rounded-2xl transition-all shadow-xl"
+            className="w-full sm:w-auto bg-green-700 hover:bg-green-600 active:scale-95 text-white text-xl sm:text-2xl font-bold py-4 px-6 sm:px-10 rounded-2xl transition-all shadow-xl min-h-[44px]"
           >
             Start Workout →
           </button>
-          <Link
-            to="/leaderboard"
-            className="bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-gray-200 text-lg font-medium py-3 px-5 rounded-xl transition-all"
-          >
-            Leaderboard
-          </Link>
-          <button
-            onClick={onLogout}
-            className="bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-gray-200 text-lg font-medium py-3 px-5 rounded-xl transition-all"
-          >
-            Logout
-          </button>
+          <div className="flex gap-3 justify-center sm:justify-start">
+            <Link
+              to="/leaderboard"
+              className="bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-gray-200 text-base sm:text-lg font-medium py-3 px-4 sm:px-5 rounded-xl transition-all min-h-[44px] flex items-center"
+            >
+              Leaderboard
+            </Link>
+            <button
+              onClick={onLogout}
+              className="bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-gray-200 text-base sm:text-lg font-medium py-3 px-4 sm:px-5 rounded-xl transition-all min-h-[44px]"
+            >
+              Logout
+            </button>
+          </div>
         </div>
       </div>
 
@@ -458,7 +460,7 @@ export default function AthleteDashboard({ athlete, onAthleteUpdate, onStartWork
         <>
           {/* ── Summary stats ── */}
           {totalWorkouts > 0 && (
-            <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
               <StatTile label="Workouts" value={totalWorkouts} color={color} />
               <StatTile label="Distance" value={formatDistance(totalDistance)} color={color} />
               <StatTile label="Total Time" value={formatTotalTime(totalSeconds)} color={color} />
@@ -479,13 +481,13 @@ export default function AthleteDashboard({ athlete, onAthleteUpdate, onStartWork
           )}
 
           {/* ── Workout history ── */}
-          <div className="flex flex-col gap-3">
-            <h2 className="text-2xl font-semibold text-gray-300">Workout History</h2>
+          <div className="flex flex-col gap-3 max-w-4xl w-full lg:mx-auto">
+            <h2 className="text-xl sm:text-2xl font-semibold text-gray-300">Workout History</h2>
 
             {workouts.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-24 gap-3">
-                <p className="text-4xl font-bold text-gray-600">No workouts yet</p>
-                <p className="text-xl text-gray-600">Hit Start Workout to get going!</p>
+              <div className="flex flex-col items-center justify-center py-16 sm:py-24 gap-3">
+                <p className="text-2xl sm:text-4xl font-bold text-gray-600">No workouts yet</p>
+                <p className="text-lg sm:text-xl text-gray-600">Hit Start Workout to get going!</p>
               </div>
             ) : (
               workouts.map((w) => (

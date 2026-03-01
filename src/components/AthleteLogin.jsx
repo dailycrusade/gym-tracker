@@ -134,9 +134,9 @@ export default function AthleteLogin({ onLogin }) {
 
   if (view === 'pin') {
     return (
-      <div className="min-h-screen bg-gray-950 text-white flex flex-col items-center justify-center p-8 gap-5">
-        <h1 className="text-5xl font-bold">{selectedAthlete.name}</h1>
-        <p className="text-gray-400 text-2xl">Enter your PIN</p>
+      <div className="min-h-screen bg-gray-950 text-white flex flex-col items-center justify-center p-4 sm:p-8 gap-5">
+        <h1 className="text-3xl sm:text-5xl font-bold">{selectedAthlete.name}</h1>
+        <p className="text-gray-400 text-xl sm:text-2xl">Enter your PIN</p>
         <PinDots filled={pin.length} />
         {error && (
           <p className="text-red-400 text-xl font-medium">{error}</p>
@@ -155,8 +155,8 @@ export default function AthleteLogin({ onLogin }) {
 
   if (view === 'newAthlete') {
     return (
-      <div className="min-h-screen bg-gray-950 text-white flex flex-col items-center justify-center p-8 gap-5 w-full">
-        <h1 className="text-5xl font-bold">New Athlete</h1>
+      <div className="min-h-screen bg-gray-950 text-white flex flex-col items-center justify-center p-4 sm:p-8 gap-5 w-full">
+        <h1 className="text-3xl sm:text-5xl font-bold">New Athlete</h1>
         {error && (
           <p className="text-red-400 text-xl font-medium">{error}</p>
         )}
@@ -190,20 +190,20 @@ export default function AthleteLogin({ onLogin }) {
 
   // Athlete selection grid
   return (
-    <div className="min-h-screen bg-gray-950 text-white flex flex-col p-8 gap-6">
-      <h1 className="text-5xl font-bold tracking-tight text-center">Who are you?</h1>
+    <div className="min-h-screen bg-gray-950 text-white flex flex-col p-4 sm:p-8 gap-6">
+      <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-center">Who are you?</h1>
 
       {athletes.length === 0 ? (
-        <p className="text-gray-400 text-2xl text-center mt-8">
+        <p className="text-gray-400 text-xl sm:text-2xl text-center mt-8">
           No athletes yet — add yourself below!
         </p>
       ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4 mt-4">
           {athletes.map((a) => (
             <button
               key={a.id}
               onClick={() => handleAthleteSelect(a)}
-              className="bg-gray-800 hover:bg-gray-700 active:scale-95 text-white text-2xl font-semibold py-10 px-4 rounded-2xl transition-all"
+              className="bg-gray-800 hover:bg-gray-700 active:scale-95 text-white text-xl sm:text-2xl font-semibold py-7 sm:py-10 px-4 rounded-2xl transition-all min-h-[44px]"
               style={{ borderLeft: `4px solid ${a.color ?? '#3b82f6'}` }}
             >
               {a.name}
@@ -215,7 +215,7 @@ export default function AthleteLogin({ onLogin }) {
       <div className="flex justify-center mt-4">
         <button
           onClick={() => { setView('newAthlete'); setError(null); }}
-          className="bg-blue-700 hover:bg-blue-600 active:scale-95 text-white text-2xl font-bold py-5 px-12 rounded-2xl transition-all"
+          className="w-full sm:w-auto bg-blue-700 hover:bg-blue-600 active:scale-95 text-white text-xl sm:text-2xl font-bold py-4 sm:py-5 px-8 sm:px-12 rounded-2xl transition-all"
         >
           + New Athlete
         </button>

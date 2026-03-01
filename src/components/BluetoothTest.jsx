@@ -19,21 +19,21 @@ function formatTime(totalSeconds) {
 }
 
 // One big metric tile — designed to be readable from across a gym
-function MetricCard({ label, value, unit, accent = false }) {
+function MetricCard({ label, value, unit, accent = false, className = '' }) {
   return (
     <div
-      className={`flex flex-col items-center justify-center rounded-2xl p-6 gap-2 ${
+      className={`flex flex-col items-center justify-center rounded-2xl p-3 sm:p-6 gap-1 sm:gap-2 ${
         accent ? 'bg-blue-950 ring-2 ring-blue-500' : 'bg-gray-800'
-      }`}
+      } ${className}`}
     >
-      <span className="text-gray-400 text-xl uppercase tracking-widest font-semibold">
+      <span className="text-gray-400 text-xs sm:text-xl uppercase tracking-widest font-semibold">
         {label}
       </span>
-      <span className="text-white font-bold tabular-nums leading-none text-8xl">
+      <span className="text-white font-bold tabular-nums leading-none text-5xl sm:text-7xl lg:text-8xl">
         {value ?? '--'}
       </span>
       {unit && (
-        <span className="text-gray-400 text-2xl font-medium">{unit}</span>
+        <span className="text-gray-400 text-base sm:text-2xl font-medium">{unit}</span>
       )}
     </div>
   );
@@ -256,7 +256,7 @@ export default function BluetoothTest({ athlete, onLogout, onWorkoutDone }) {
   const cadenceUnit = isEchoBike ? 'rpm' : 'spm';
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white flex flex-col p-8 gap-6">
+    <div className="min-h-screen bg-gray-950 text-white flex flex-col p-4 sm:p-6 lg:p-8 gap-4 sm:gap-6">
       {/* ── Save overlay ── */}
       {saveState && (
         <div className="fixed inset-0 bg-gray-950/95 flex flex-col items-center justify-center z-50 gap-4">
@@ -277,9 +277,9 @@ export default function BluetoothTest({ athlete, onLogout, onWorkoutDone }) {
       )}
 
       {/* ── Header ── */}
-      <div className="flex items-center justify-between gap-4">
-        <div className="flex items-center gap-4 min-w-0">
-          <h1 className="text-4xl font-bold tracking-tight shrink-0">Gym Tracker</h1>
+      <div className="flex items-center justify-between gap-3 sm:gap-4">
+        <div className="flex items-center gap-3 sm:gap-4 min-w-0">
+          <h1 className="text-2xl sm:text-4xl font-bold tracking-tight shrink-0">Gym Tracker</h1>
           {/* Athlete badge */}
           <div className="flex items-center gap-3 bg-gray-800 px-4 py-2 rounded-xl min-w-0">
             <span className="text-gray-200 text-lg font-medium truncate">{athlete.name}</span>
@@ -294,7 +294,7 @@ export default function BluetoothTest({ athlete, onLogout, onWorkoutDone }) {
 
         {/* Connection status badge */}
         <div
-          className={`flex items-center gap-2 px-5 py-2 rounded-full text-lg font-semibold shrink-0 ${
+          className={`flex items-center gap-2 px-3 sm:px-5 py-2 rounded-full text-sm sm:text-lg font-semibold shrink-0 ${
             isConnected
               ? 'bg-green-800 text-green-100'
               : isConnecting || isReconnecting
@@ -330,16 +330,16 @@ export default function BluetoothTest({ athlete, onLogout, onWorkoutDone }) {
 
       {/* ── Connect buttons (shown when idle) ── */}
       {!isConnected && !isConnecting && !isReconnecting && (
-        <div className="flex flex-col sm:flex-row gap-6 justify-center items-center mt-16">
+        <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center items-center mt-8 sm:mt-16">
           <button
             onClick={() => handleConnect(MACHINE_TYPES.ECHO_BIKE)}
-            className="bg-blue-700 hover:bg-blue-600 active:scale-95 text-white text-3xl font-bold py-8 px-16 rounded-2xl transition-all shadow-xl"
+            className="w-full sm:w-auto bg-blue-700 hover:bg-blue-600 active:scale-95 text-white text-2xl sm:text-3xl font-bold py-6 sm:py-8 px-8 sm:px-16 rounded-2xl transition-all shadow-xl min-h-[44px]"
           >
             Connect Echo Bike
           </button>
           <button
             onClick={() => handleConnect(MACHINE_TYPES.SKI_ERG)}
-            className="bg-violet-700 hover:bg-violet-600 active:scale-95 text-white text-3xl font-bold py-8 px-16 rounded-2xl transition-all shadow-xl"
+            className="w-full sm:w-auto bg-violet-700 hover:bg-violet-600 active:scale-95 text-white text-2xl sm:text-3xl font-bold py-6 sm:py-8 px-8 sm:px-16 rounded-2xl transition-all shadow-xl min-h-[44px]"
           >
             Connect Ski Erg
           </button>
@@ -348,7 +348,7 @@ export default function BluetoothTest({ athlete, onLogout, onWorkoutDone }) {
 
       {/* ── Metrics grid (shown when connecting/connected/reconnecting) ── */}
       {(isConnected || isConnecting || isReconnecting) && (
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-5 flex-1">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-5 flex-1">
           <MetricCard
             label="Power"
             value={metrics.watts}
@@ -374,6 +374,7 @@ export default function BluetoothTest({ athlete, onLogout, onWorkoutDone }) {
             label="Time"
             value={formatTime(elapsed)}
             unit=""
+            className="col-span-2 md:col-span-1"
           />
         </div>
       )}
@@ -383,7 +384,7 @@ export default function BluetoothTest({ athlete, onLogout, onWorkoutDone }) {
         <div className="flex justify-center">
           <button
             onClick={handleEndWorkout}
-            className="bg-green-700 hover:bg-green-600 active:scale-95 text-white text-2xl font-bold py-5 px-16 rounded-2xl transition-all shadow-xl"
+            className="w-full sm:w-auto bg-green-700 hover:bg-green-600 active:scale-95 text-white text-xl sm:text-2xl font-bold py-5 px-8 sm:px-16 rounded-2xl transition-all shadow-xl min-h-[44px]"
           >
             End Workout
           </button>
