@@ -18,22 +18,34 @@ function formatTime(totalSeconds) {
   return `${m}:${s}`;
 }
 
-// One big metric tile — designed to be readable from across a gym
+// Metric tile — text scales with viewport height so tiles always fit on screen.
 function MetricCard({ label, value, unit, accent = false, className = '' }) {
   return (
     <div
-      className={`flex flex-col items-center justify-center rounded-2xl p-3 sm:p-6 gap-1 sm:gap-2 ${
+      className={`flex flex-col items-center justify-center rounded-2xl ${
         accent ? 'bg-blue-950 ring-2 ring-blue-500' : 'bg-gray-800'
       } ${className}`}
+      style={{ padding: 'clamp(0.4rem, 1.5vh, 1.25rem)' }}
     >
-      <span className="text-gray-400 text-xs sm:text-xl uppercase tracking-widest font-semibold">
+      <span
+        className="text-gray-400 uppercase tracking-widest font-semibold"
+        style={{ fontSize: 'clamp(0.6rem, 1.8vh, 1rem)' }}
+      >
         {label}
       </span>
-      <span className="text-white font-bold tabular-nums leading-none text-5xl sm:text-7xl lg:text-8xl">
+      <span
+        className="text-white font-bold tabular-nums leading-none"
+        style={{ fontSize: 'clamp(2rem, 10vh, 6rem)' }}
+      >
         {value ?? '--'}
       </span>
       {unit && (
-        <span className="text-gray-400 text-base sm:text-2xl font-medium">{unit}</span>
+        <span
+          className="text-gray-400 font-medium"
+          style={{ fontSize: 'clamp(0.7rem, 2vh, 1.25rem)' }}
+        >
+          {unit}
+        </span>
       )}
     </div>
   );
@@ -256,7 +268,8 @@ export default function BluetoothTest({ athlete, onLogout, onWorkoutDone }) {
   const cadenceUnit = isEchoBike ? 'rpm' : 'spm';
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white flex flex-col p-4 sm:p-6 lg:p-8 gap-4 sm:gap-6">
+    <div className="h-screen bg-gray-950 text-white flex flex-col overflow-hidden p-3 sm:p-4 gap-3">
+
       {/* ── Save overlay ── */}
       {saveState && (
         <div className="fixed inset-0 bg-gray-950/95 flex flex-col items-center justify-center z-50 gap-4">
@@ -277,15 +290,25 @@ export default function BluetoothTest({ athlete, onLogout, onWorkoutDone }) {
       )}
 
       {/* ── Header ── */}
-      <div className="flex items-center justify-between gap-3 sm:gap-4">
-        <div className="flex items-center gap-3 sm:gap-4 min-w-0">
-          <h1 className="text-2xl sm:text-4xl font-bold tracking-tight shrink-0">Gym Tracker</h1>
+      <div className="shrink-0 flex items-center justify-between gap-2 sm:gap-4">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <h1
+            className="font-bold tracking-tight shrink-0"
+            style={{ fontSize: 'clamp(1rem, 3vh, 1.75rem)' }}
+          >
+            Gym Tracker
+          </h1>
           {/* Athlete badge */}
-          <div className="flex items-center gap-3 bg-gray-800 px-4 py-2 rounded-xl min-w-0">
-            <span className="text-gray-200 text-lg font-medium truncate">{athlete.name}</span>
+          <div className="flex items-center gap-2 bg-gray-800 px-3 py-1.5 rounded-xl min-w-0">
+            <span
+              className="text-gray-200 font-medium truncate"
+              style={{ fontSize: 'clamp(0.75rem, 2vh, 1rem)' }}
+            >
+              {athlete.name}
+            </span>
             <button
               onClick={handleLogout}
-              className="text-gray-500 hover:text-red-400 text-sm font-medium shrink-0 transition-colors"
+              className="text-gray-500 hover:text-red-400 text-xs font-medium shrink-0 transition-colors"
             >
               Logout
             </button>
@@ -294,16 +317,17 @@ export default function BluetoothTest({ athlete, onLogout, onWorkoutDone }) {
 
         {/* Connection status badge */}
         <div
-          className={`flex items-center gap-2 px-3 sm:px-5 py-2 rounded-full text-sm sm:text-lg font-semibold shrink-0 ${
+          className={`flex items-center gap-1.5 px-2 sm:px-3 py-1.5 rounded-full font-semibold shrink-0 ${
             isConnected
               ? 'bg-green-800 text-green-100'
               : isConnecting || isReconnecting
                 ? 'bg-yellow-800 text-yellow-100'
                 : 'bg-gray-800 text-gray-400'
           }`}
+          style={{ fontSize: 'clamp(0.65rem, 1.8vh, 0.9rem)' }}
         >
           <span
-            className={`w-3 h-3 rounded-full shrink-0 ${
+            className={`w-2 h-2 rounded-full shrink-0 ${
               isConnected
                 ? 'bg-green-400'
                 : isConnecting || isReconnecting
@@ -323,53 +347,45 @@ export default function BluetoothTest({ athlete, onLogout, onWorkoutDone }) {
 
       {/* ── Error banner ── */}
       {error && !saveState && (
-        <div className="bg-red-950 border border-red-700 text-red-300 rounded-xl px-6 py-4 text-xl">
+        <div className="shrink-0 bg-red-950 border border-red-700 text-red-300 rounded-xl px-4 py-3 text-base">
           ⚠ {error}
         </div>
       )}
 
       {/* ── Connect buttons (shown when idle) ── */}
       {!isConnected && !isConnecting && !isReconnecting && (
-        <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center items-center mt-8 sm:mt-16">
+        <div className="flex-1 min-h-0 flex flex-col sm:flex-row gap-4 justify-center items-center">
           <button
             onClick={() => handleConnect(MACHINE_TYPES.ECHO_BIKE)}
-            className="w-full sm:w-auto bg-blue-700 hover:bg-blue-600 active:scale-95 text-white text-2xl sm:text-3xl font-bold py-6 sm:py-8 px-8 sm:px-16 rounded-2xl transition-all shadow-xl min-h-[44px]"
+            className="w-full sm:w-auto bg-blue-700 hover:bg-blue-600 active:scale-95 text-white font-bold rounded-2xl transition-all shadow-xl px-8 py-5"
+            style={{ fontSize: 'clamp(1.125rem, 3vh, 1.875rem)' }}
           >
             Connect Echo Bike
           </button>
           <button
             onClick={() => handleConnect(MACHINE_TYPES.SKI_ERG)}
-            className="w-full sm:w-auto bg-violet-700 hover:bg-violet-600 active:scale-95 text-white text-2xl sm:text-3xl font-bold py-6 sm:py-8 px-8 sm:px-16 rounded-2xl transition-all shadow-xl min-h-[44px]"
+            className="w-full sm:w-auto bg-violet-700 hover:bg-violet-600 active:scale-95 text-white font-bold rounded-2xl transition-all shadow-xl px-8 py-5"
+            style={{ fontSize: 'clamp(1.125rem, 3vh, 1.875rem)' }}
           >
             Connect Ski Erg
           </button>
+
+          {/* Browser compatibility note */}
+          {typeof navigator !== 'undefined' && !navigator.bluetooth && (
+            <p className="text-center text-gray-500 text-base absolute bottom-8 left-0 right-0 px-4">
+              Web Bluetooth requires Chrome or Edge.
+            </p>
+          )}
         </div>
       )}
 
-      {/* ── Metrics grid (shown when connecting/connected/reconnecting) ── */}
+      {/* ── Metrics grid — fills all remaining height ── */}
       {(isConnected || isConnecting || isReconnecting) && (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 sm:gap-5 flex-1">
-          <MetricCard
-            label="Power"
-            value={metrics.watts}
-            unit="watts"
-            accent
-          />
-          <MetricCard
-            label={cadenceLabel}
-            value={cadenceValue}
-            unit={cadenceUnit}
-          />
-          <MetricCard
-            label="Distance"
-            value={metrics.distance}
-            unit="m"
-          />
-          <MetricCard
-            label="Calories"
-            value={metrics.calories}
-            unit="kcal"
-          />
+        <div className="flex-1 min-h-0 grid grid-cols-2 md:grid-cols-3 gap-3">
+          <MetricCard label="Power"        value={metrics.watts}        unit="watts" accent />
+          <MetricCard label={cadenceLabel} value={cadenceValue}         unit={cadenceUnit} />
+          <MetricCard label="Distance"     value={metrics.distance}     unit="m" />
+          <MetricCard label="Calories"     value={metrics.calories}     unit="kcal" />
           <MetricCard
             label="Time"
             value={formatTime(elapsed)}
@@ -381,24 +397,17 @@ export default function BluetoothTest({ athlete, onLogout, onWorkoutDone }) {
 
       {/* ── End Workout button ── */}
       {(isConnected || isReconnecting) && (
-        <div className="flex justify-center">
+        <div className="shrink-0 flex justify-center">
           <button
             onClick={handleEndWorkout}
-            className="w-full sm:w-auto bg-green-700 hover:bg-green-600 active:scale-95 text-white text-xl sm:text-2xl font-bold py-5 px-8 sm:px-16 rounded-2xl transition-all shadow-xl min-h-[44px]"
+            className="w-full sm:w-auto bg-green-700 hover:bg-green-600 active:scale-95 text-white font-bold rounded-2xl transition-all shadow-xl px-8 py-4"
+            style={{ fontSize: 'clamp(1rem, 2.5vh, 1.5rem)' }}
           >
             End Workout
           </button>
         </div>
       )}
 
-      {/* ── Browser compatibility note ── */}
-      {!isConnected && !isConnecting && !isReconnecting && typeof navigator !== 'undefined' && !navigator.bluetooth && (
-        <p className="text-center text-gray-500 text-lg mt-8">
-          Web Bluetooth requires Chrome or Edge. Safari and Firefox are not supported.
-        </p>
-      )}
-
-      {/* ── Version indicator ── */}
       <Footer />
     </div>
   );
