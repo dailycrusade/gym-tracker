@@ -1,13 +1,15 @@
 /**
- * bluetooth.js — FTMS (Fitness Machine Service) Web Bluetooth helpers
+ * bluetooth.js — Web Bluetooth helpers for FTMS machines and HR monitors
  *
  * Supports:
  *   - Rogue Echo Bike  → Indoor Bike Data characteristic (0x2AD2)
  *   - Rogue Ski Erg    → Rowing Machine Data characteristic (0x2AD1)
+ *   - Heart Rate monitors → Heart Rate Measurement characteristic (0x2A37)
  *
  * Usage:
- *   const conn = await connectToMachine(MACHINE_TYPES.ECHO_BIKE, onMetrics, onDisconnect);
- *   // ...
+ *   const conn = await connectToMachine(MACHINE_TYPES.ECHO_BIKE, onMetrics, onDisconnect, onReconnecting);
+ *   const conn = await reconnectToMachine(MACHINE_TYPES.ECHO_BIKE, ...); // no picker, uses getDevices()
+ *   const conn = await connectToHRMonitor(onHeartRate, onDisconnect, onReconnecting);
  *   conn.disconnect();
  */
 
@@ -31,33 +33,20 @@ export const DEVICE_TYPES = {
 // ---------------------------------------------------------------------------
 // Indoor Bike Data (0x2AD2) parser — used for Echo Bike
 // Spec: FTMS v1.0, Section 4.9.1
-//
-// Returned object: { watts, cadence (rpm), distance (m), calories, elapsedTime (s) }
 // ---------------------------------------------------------------------------
 function parseIndoorBikeData(dataView) {
-  const flags = dataView.getUint16(0, true); // little-endian
+  const flags = dataView.getUint16(0, true);
   let offset = 2;
 
-  const result = {
-    watts: null,
-    cadence: null,
-    distance: null,
-    calories: null,
-    elapsedTime: null,
-  };
+  const result = { watts: null, cadence: null, distance: null, calories: null, elapsedTime: null };
 
-  // Bit 0 "More Data" — when 0, Instantaneous Speed field is present
-  if ((flags & 0x0001) === 0) offset += 2;  // uint16, 0.01 km/h
-
-  if (flags & 0x0002) offset += 2;          // Average Speed, uint16
-
+  if ((flags & 0x0001) === 0) offset += 2;  // Instantaneous Speed
+  if (flags & 0x0002) offset += 2;          // Average Speed
   if (flags & 0x0004) {                      // Instantaneous Cadence
-    result.cadence = dataView.getUint16(offset, true) * 0.5; // 0.5 rpm resolution
+    result.cadence = dataView.getUint16(offset, true) * 0.5;
     offset += 2;
   }
-
   if (flags & 0x0008) offset += 2;          // Average Cadence
-
   if (flags & 0x0010) {                      // Total Distance, uint24
     result.distance =
       dataView.getUint8(offset) |
@@ -65,58 +54,40 @@ function parseIndoorBikeData(dataView) {
       (dataView.getUint8(offset + 2) << 16);
     offset += 3;
   }
-
-  if (flags & 0x0020) offset += 2;          // Resistance Level, sint16
-
+  if (flags & 0x0020) offset += 2;          // Resistance Level
   if (flags & 0x0040) {                      // Instantaneous Power
-    result.watts = dataView.getInt16(offset, true); // sint16, 1 W resolution
+    result.watts = dataView.getInt16(offset, true);
     offset += 2;
   }
-
   if (flags & 0x0080) offset += 2;          // Average Power
-
   if (flags & 0x0100) {                      // Expended Energy
-    result.calories = dataView.getUint16(offset, true); // Total Energy, kcal
-    offset += 5;                             // total(2) + per-hour(2) + per-minute(1)
+    result.calories = dataView.getUint16(offset, true);
+    offset += 5;
   }
-
-  if (flags & 0x0200) offset += 1;          // Heart Rate, uint8
-  if (flags & 0x0400) offset += 1;          // Metabolic Equivalent, uint8 (0.1 res)
-
+  if (flags & 0x0200) offset += 1;          // Heart Rate
+  if (flags & 0x0400) offset += 1;          // Metabolic Equivalent
   if (flags & 0x0800) {                      // Elapsed Time
-    result.elapsedTime = dataView.getUint16(offset, true); // uint16, seconds
+    result.elapsedTime = dataView.getUint16(offset, true);
     offset += 2;
   }
-
   return result;
 }
 
 // ---------------------------------------------------------------------------
 // Rowing Machine Data (0x2AD1) parser — used for Ski Erg
 // Spec: FTMS v1.0, Section 4.8.1
-//
-// Returned object: { watts, strokeRate (spm), distance (m), calories, elapsedTime (s) }
 // ---------------------------------------------------------------------------
 function parseRowingMachineData(dataView) {
   const flags = dataView.getUint16(0, true);
   let offset = 2;
 
-  const result = {
-    watts: null,
-    strokeRate: null,
-    distance: null,
-    calories: null,
-    elapsedTime: null,
-  };
+  const result = { watts: null, strokeRate: null, distance: null, calories: null, elapsedTime: null };
 
-  // Bit 0 "More Data" — when 0, Stroke Rate + Stroke Count are present
   if ((flags & 0x0001) === 0) {
-    result.strokeRate = dataView.getUint8(offset) * 0.5; // 0.5 spm resolution
-    offset += 3;                             // uint8 stroke rate + uint16 stroke count
+    result.strokeRate = dataView.getUint8(offset) * 0.5;
+    offset += 3;
   }
-
-  if (flags & 0x0002) offset += 1;          // Average Stroke Rate, uint8
-
+  if (flags & 0x0002) offset += 1;          // Average Stroke Rate
   if (flags & 0x0004) {                      // Total Distance, uint24
     result.distance =
       dataView.getUint8(offset) |
@@ -124,115 +95,72 @@ function parseRowingMachineData(dataView) {
       (dataView.getUint8(offset + 2) << 16);
     offset += 3;
   }
-
-  if (flags & 0x0008) offset += 2;          // Instantaneous Pace, uint16 (s/500m)
-  if (flags & 0x0010) offset += 2;          // Average Pace, uint16
-
+  if (flags & 0x0008) offset += 2;          // Instantaneous Pace
+  if (flags & 0x0010) offset += 2;          // Average Pace
   if (flags & 0x0020) {                      // Instantaneous Power
-    result.watts = dataView.getInt16(offset, true); // sint16, 1 W resolution
+    result.watts = dataView.getInt16(offset, true);
     offset += 2;
   }
-
   if (flags & 0x0040) offset += 2;          // Average Power
-  if (flags & 0x0080) offset += 2;          // Resistance Level, sint16
-
+  if (flags & 0x0080) offset += 2;          // Resistance Level
   if (flags & 0x0100) {                      // Expended Energy
-    result.calories = dataView.getUint16(offset, true); // Total Energy, kcal
-    offset += 5;                             // total(2) + per-hour(2) + per-minute(1)
+    result.calories = dataView.getUint16(offset, true);
+    offset += 5;
   }
-
   if (flags & 0x0200) offset += 1;          // Heart Rate
   if (flags & 0x0400) offset += 1;          // Metabolic Equivalent
-
   if (flags & 0x0800) {                      // Elapsed Time
     result.elapsedTime = dataView.getUint16(offset, true);
     offset += 2;
   }
-
   return result;
 }
 
-// All known FTMS characteristic UUIDs — required in optionalServices for the fallback path
-// so Chrome grants access to them even without a service filter.
+// ---------------------------------------------------------------------------
+// Heart Rate Measurement (0x2A37) parser
+// BLE HR spec: flags byte bit 0 = 0 → uint8 HR, bit 0 = 1 → uint16 HR (LE)
+// ---------------------------------------------------------------------------
+function parseHRMeasurement(dataView) {
+  const flags = dataView.getUint8(0);
+  return (flags & 0x01)
+    ? dataView.getUint16(1, true)
+    : dataView.getUint8(1);
+}
+
+// All known FTMS characteristic UUIDs — needed in optionalServices for the
+// fallback picker so Chrome grants access without a service filter.
 const FTMS_CHARACTERISTICS = [
-  0x2acc, // Fitness Machine Feature
-  0x2ad1, // Rower / Ski Erg Data
-  0x2ad2, // Indoor Bike Data
-  0x2ad3, // Training Status
-  0x2ad6, // Supported Resistance Level Range
-  0x2ad8, // Supported Power Range
-  0x2ad9, // Fitness Machine Control Point
-  0x2ada, // Fitness Machine Status
+  0x2acc, 0x2ad1, 0x2ad2, 0x2ad3, 0x2ad6, 0x2ad8, 0x2ad9, 0x2ada,
 ];
 
-// Extracts the short 16-bit UUID string from a full 128-bit BLE UUID string.
-// e.g. "00001826-0000-1000-8000-00805f9b34fb" → "0x1826"
 function shortUuid(uuid) {
   return '0x' + uuid.slice(4, 8).toUpperCase();
 }
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 // ---------------------------------------------------------------------------
-// connectToMachine
+// _connectWithDevice  (internal)
 //
-// Opens the browser Bluetooth device picker (requires a user gesture),
-// connects to the FTMS service, subscribes to notifications, and returns
-// a handle to disconnect when done.
+// Shared GATT connection logic used by connectToMachine and reconnectToMachine.
+// Takes an already-selected BluetoothDevice and drives the full setup:
+//   subscribe → reconnect-on-disconnect loop → return handle.
 //
-// On Linux / Raspberry Pi, Chrome's FTMS service filter sometimes fails
-// because the device only includes the service UUID in scan-response data
-// rather than the primary advertisement. This function first tries the strict
-// filter, then falls back to acceptAllDevices with optionalServices so the
-// user can manually select the Rogue machine.
-//
-// @param {string}   machineType  - MACHINE_TYPES.ECHO_BIKE | MACHINE_TYPES.SKI_ERG
-// @param {function} onMetrics    - Called with a parsed metric object on every notification
-// @param {function} onDisconnect - Called when the device disconnects (expected or unexpected)
-// @returns {Promise<{ deviceName: string, disconnect: function }>}
+// opts.maxAttempts       — GATT connect attempts (default 3)
+// opts.stabilizationDelay — ms to wait after connect() resolves (default 2000)
+//   Lower values make reconnectToMachine faster at the cost of BlueZ stability.
 // ---------------------------------------------------------------------------
-export async function connectToMachine(machineType, onMetrics, onDisconnect, onReconnecting) {
-  if (!navigator.bluetooth) {
-    throw new Error(
-      'Web Bluetooth is not supported. Use Chrome or Edge, and serve over HTTPS (or localhost).'
-    );
-  }
+async function _connectWithDevice(device, machineType, onMetrics, onDisconnect, onReconnecting, opts = {}) {
+  const {
+    maxAttempts = 3,
+    stabilizationDelay = 2000,
+  } = opts;
 
   const charUuid =
-    machineType === MACHINE_TYPES.SKI_ERG
-      ? CHAR_ROWING_MACHINE_DATA
-      : CHAR_INDOOR_BIKE_DATA;
-
+    machineType === MACHINE_TYPES.SKI_ERG ? CHAR_ROWING_MACHINE_DATA : CHAR_INDOOR_BIKE_DATA;
   const parseData =
-    machineType === MACHINE_TYPES.SKI_ERG
-      ? parseRowingMachineData
-      : parseIndoorBikeData;
+    machineType === MACHINE_TYPES.SKI_ERG ? parseRowingMachineData : parseIndoorBikeData;
 
-  // --- 1. Device picker: strict filter first, fall back to acceptAllDevices ---
-
-  let device;
-  try {
-    console.log('[bluetooth] Requesting device with strict FTMS service filter (0x1826)…');
-    device = await navigator.bluetooth.requestDevice({
-      filters: [{ services: [FTMS_SERVICE] }],
-    });
-    console.log('[bluetooth] Device selected via strict filter:', device.name);
-  } catch (strictErr) {
-    console.warn('[bluetooth] Strict FTMS filter failed:', strictErr.message);
-    console.log('[bluetooth] Retrying with acceptAllDevices + optionalServices fallback…');
-
-    device = await navigator.bluetooth.requestDevice({
-      acceptAllDevices: true,
-      optionalServices: [FTMS_SERVICE, ...FTMS_CHARACTERISTICS],
-    });
-    console.log('[bluetooth] Device selected via fallback picker:', device.name);
-  }
-
-  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-  // ---------------------------------------------------------------------------
-  // Notification handler — named so the same function reference is reused when
-  // re-registering on a fresh characteristic object after a silent reconnect.
-  // Using the same reference prevents duplicate listeners accumulating.
-  // ---------------------------------------------------------------------------
   function handleNotification(event) {
     const dv = event.target.value;
     const bytes = Array.from({ length: dv.byteLength }, (_, i) =>
@@ -248,9 +176,6 @@ export async function connectToMachine(machineType, onMetrics, onDisconnect, onR
     }
   }
 
-  // Acquire the target characteristic, attach handleNotification, and start
-  // notifications (with one retry on failure). Shared by initial connect and
-  // silent reconnect so the setup path is identical both times.
   async function subscribeToCharacteristic(service) {
     const char = await service.getCharacteristic(charUuid);
     char.addEventListener('characteristicvaluechanged', handleNotification);
@@ -265,8 +190,9 @@ export async function connectToMachine(machineType, onMetrics, onDisconnect, onR
     console.log('[bluetooth] Notifications started.');
   }
 
-  // Silently re-establish the full GATT stack without touching the UI.
-  // Returns true on success, false after all attempts are exhausted.
+  let fullyConnected = false;
+  let disconnectTimer = null;
+
   async function attemptSilentReconnect() {
     for (let i = 1; i <= 3; i++) {
       try {
@@ -286,20 +212,11 @@ export async function connectToMachine(machineType, onMetrics, onDisconnect, onR
     return false;
   }
 
-  // On Linux/BlueZ, gattserverdisconnected fires aggressively — including when
-  // the machine simply goes idle — even though the notification channel may
-  // still be live. Strategy:
-  //   1. Debounce 5 s. If the link recovers naturally, do nothing.
-  //   2. If still gone, call onReconnecting (UI shows "Reconnecting…") and
-  //      attempt up to 3 silent reconnects before giving up.
-  //   3. Only call onDisconnect (return to connect screen) if all 3 fail.
-  let fullyConnected = false;
-  let disconnectTimer = null;
-  device.addEventListener('gattserverdisconnected', () => {
+  function onGattDisconnected() {
     if (!fullyConnected) return;
     clearTimeout(disconnectTimer);
     disconnectTimer = setTimeout(async () => {
-      if (device.gatt.connected) return; // recovered within the debounce window
+      if (device.gatt.connected) return;
       console.log('[bluetooth] Still disconnected after 5 s — attempting silent reconnect…');
       onReconnecting?.();
       const reconnected = await attemptSilentReconnect();
@@ -309,49 +226,35 @@ export async function connectToMachine(machineType, onMetrics, onDisconnect, onR
         onDisconnect?.();
       }
     }, 5000);
-  });
+  }
 
-  // --- 2. GATT connection with BlueZ retry loop ---
-  //
-  // On Linux/BlueZ the GATT server can drop immediately after connect()
-  // resolves — before we even call getPrimaryService(). We wait 2 s after
-  // connecting, re-connect once if the server dropped in that window, then
-  // attempt the full service/characteristic setup. The whole post-connect
-  // block retries up to 3 times with 1 s between attempts.
+  device.addEventListener('gattserverdisconnected', onGattDisconnected);
 
-  const MAX_ATTEMPTS = 3;
+  // GATT connection with BlueZ retry loop
   let lastErr;
-
-  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
-      console.log(`[bluetooth] GATT connect attempt ${attempt}/${MAX_ATTEMPTS}…`);
+      console.log(`[bluetooth] GATT connect attempt ${attempt}/${maxAttempts}…`);
       let server = await device.gatt.connect();
-      console.log('[bluetooth] GATT connected. Waiting 2 s for BlueZ to stabilise…');
+      console.log(`[bluetooth] GATT connected. Waiting ${stabilizationDelay} ms for BlueZ to stabilise…`);
 
-      await sleep(2000);
+      await sleep(stabilizationDelay);
 
-      // If BlueZ dropped the link during the wait, reconnect once before proceeding.
       if (!server.connected) {
         console.warn('[bluetooth] GATT dropped during stabilisation delay — reconnecting…');
         server = await device.gatt.connect();
-        console.log('[bluetooth] GATT reconnected.');
       }
 
-      // NOTE: getPrimaryServices() with no args is intentionally omitted here.
-      // On Linux/BlueZ it triggers a full GATT service discovery that the Rogue
-      // rejects, silently killing the connection before we can use it.
+      // NOTE: getPrimaryServices() with no args is intentionally avoided here.
+      // On Linux/BlueZ it triggers a full GATT discovery that the Rogue rejects.
       const service = await server.getPrimaryService(FTMS_SERVICE);
       console.log('[bluetooth] FTMS service (0x1826) obtained.');
 
       await sleep(500);
 
-      // Log every characteristic inside the FTMS service.
       try {
         const allChars = await service.getCharacteristics();
-        console.log(
-          '[bluetooth] Characteristics in FTMS service:',
-          allChars.map((c) => shortUuid(c.uuid))
-        );
+        console.log('[bluetooth] Characteristics:', allChars.map((c) => shortUuid(c.uuid)));
       } catch (charErr) {
         console.warn('[bluetooth] Could not enumerate characteristics:', charErr.message);
       }
@@ -366,48 +269,106 @@ export async function connectToMachine(machineType, onMetrics, onDisconnect, onR
         disconnect() {
           clearTimeout(disconnectTimer);
           fullyConnected = false;
-          if (device.gatt.connected) {
-            device.gatt.disconnect();
-          }
+          device.removeEventListener('gattserverdisconnected', onGattDisconnected);
+          if (device.gatt.connected) device.gatt.disconnect();
         },
       };
     } catch (err) {
       lastErr = err;
       console.warn(`[bluetooth] Attempt ${attempt} failed:`, err.message);
-      if (attempt < MAX_ATTEMPTS) {
+      if (attempt < maxAttempts) {
         console.log('[bluetooth] Waiting 1 s before next attempt…');
         await sleep(1000);
       }
     }
   }
 
+  // All attempts failed — clean up the listener we added
+  device.removeEventListener('gattserverdisconnected', onGattDisconnected);
   throw lastErr;
 }
 
 // ---------------------------------------------------------------------------
-// Heart Rate Measurement (0x2A37) parser
-// BLE HR spec: first byte is flags.
-//   bit 0 = 0 → HR value is uint8 in byte 1
-//   bit 0 = 1 → HR value is uint16 in bytes 1-2 (little-endian)
+// connectToMachine  (public)
+//
+// Opens the browser Bluetooth device picker (requires a user gesture),
+// then delegates to _connectWithDevice.
+//
+// On Linux/Raspberry Pi the strict FTMS service filter sometimes fails because
+// the device only includes the UUID in scan-response data.  The function first
+// tries the strict filter, then falls back to acceptAllDevices.
 // ---------------------------------------------------------------------------
-function parseHRMeasurement(dataView) {
-  const flags = dataView.getUint8(0);
-  return (flags & 0x01)
-    ? dataView.getUint16(1, true)
-    : dataView.getUint8(1);
+export async function connectToMachine(machineType, onMetrics, onDisconnect, onReconnecting) {
+  if (!navigator.bluetooth) {
+    throw new Error(
+      'Web Bluetooth is not supported. Use Chrome or Edge, and serve over HTTPS (or localhost).'
+    );
+  }
+
+  let device;
+  try {
+    console.log('[bluetooth] Requesting device with strict FTMS service filter (0x1826)…');
+    device = await navigator.bluetooth.requestDevice({
+      filters: [{ services: [FTMS_SERVICE] }],
+    });
+    console.log('[bluetooth] Device selected via strict filter:', device.name);
+  } catch (strictErr) {
+    console.warn('[bluetooth] Strict FTMS filter failed:', strictErr.message);
+    console.log('[bluetooth] Retrying with acceptAllDevices + optionalServices fallback…');
+    device = await navigator.bluetooth.requestDevice({
+      acceptAllDevices: true,
+      optionalServices: [FTMS_SERVICE, ...FTMS_CHARACTERISTICS],
+    });
+    console.log('[bluetooth] Device selected via fallback picker:', device.name);
+  }
+
+  return _connectWithDevice(device, machineType, onMetrics, onDisconnect, onReconnecting);
 }
 
 // ---------------------------------------------------------------------------
-// connectToHRMonitor
+// reconnectToMachine  (public)
 //
-// Opens the browser Bluetooth device picker for a Heart Rate Service (0x180D)
-// device, subscribes to Heart Rate Measurement notifications, and returns a
-// disconnect handle.  Mirrors the reconnect logic used for machine connections.
+// Attempts to reconnect to a previously authorised Bluetooth device without
+// opening the picker.  Uses navigator.bluetooth.getDevices() — which returns
+// devices the browser has already granted permission for — and tries each one
+// in turn with a single connection attempt and a shorter stabilisation delay.
 //
-// @param {function} onHeartRate   - Called with bpm (number) on every reading
-// @param {function} onDisconnect  - Called after all reconnect attempts fail
-// @param {function} onReconnecting - Called when a transient disconnect is detected
-// @returns {Promise<{ deviceName: string, disconnect: function }>}
+// Throws if getDevices() is unsupported, no devices are found, or every
+// candidate fails.  Callers should fall back to connectToMachine on error.
+// ---------------------------------------------------------------------------
+export async function reconnectToMachine(machineType, onMetrics, onDisconnect, onReconnecting) {
+  if (!navigator.bluetooth?.getDevices) {
+    throw new Error('navigator.bluetooth.getDevices() is not supported in this browser.');
+  }
+
+  const devices = await navigator.bluetooth.getDevices();
+  console.log(`[bluetooth/reconnect] ${devices.length} previously authorised device(s) found.`);
+
+  if (devices.length === 0) {
+    throw new Error('No previously authorised Bluetooth devices found.');
+  }
+
+  for (const device of devices) {
+    try {
+      console.log('[bluetooth/reconnect] Trying device:', device.name);
+      return await _connectWithDevice(
+        device, machineType, onMetrics, onDisconnect, onReconnecting,
+        { maxAttempts: 1, stabilizationDelay: 1000 },
+      );
+    } catch (err) {
+      console.warn('[bluetooth/reconnect] Device failed:', device.name, err.message);
+    }
+  }
+
+  throw new Error('Could not reconnect to any previously authorised device.');
+}
+
+// ---------------------------------------------------------------------------
+// connectToHRMonitor  (public)
+//
+// Opens the picker for a Heart Rate Service (0x180D) device, subscribes to
+// Heart Rate Measurement notifications, and returns a disconnect handle.
+// Mirrors the reconnect logic used for machine connections.
 // ---------------------------------------------------------------------------
 export async function connectToHRMonitor(onHeartRate, onDisconnect, onReconnecting) {
   if (!navigator.bluetooth) {
@@ -425,15 +386,12 @@ export async function connectToHRMonitor(onHeartRate, onDisconnect, onReconnecti
     console.log('[bluetooth/HR] Device selected via strict filter:', device.name);
   } catch (strictErr) {
     console.warn('[bluetooth/HR] Strict HR filter failed:', strictErr.message);
-    console.log('[bluetooth/HR] Retrying with acceptAllDevices + optionalServices…');
     device = await navigator.bluetooth.requestDevice({
       acceptAllDevices: true,
       optionalServices: [HR_SERVICE, CHAR_HR_MEASUREMENT],
     });
     console.log('[bluetooth/HR] Device selected via fallback picker:', device.name);
   }
-
-  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
   function handleNotification(event) {
     try {
@@ -458,13 +416,16 @@ export async function connectToHRMonitor(onHeartRate, onDisconnect, onReconnecti
     console.log('[bluetooth/HR] HR notifications started.');
   }
 
+  let fullyConnected = false;
+  let disconnectTimer = null;
+
   async function attemptSilentReconnect() {
     for (let i = 1; i <= 3; i++) {
       try {
         console.log(`[bluetooth/HR] Silent reconnect attempt ${i}/3…`);
         const server = await device.gatt.connect();
         await sleep(1000);
-        if (!server.connected) throw new Error('GATT dropped immediately after reconnect');
+        if (!server.connected) throw new Error('GATT dropped immediately');
         const service = await server.getPrimaryService(HR_SERVICE);
         await subscribeToHR(service);
         console.log('[bluetooth/HR] Silent reconnect successful.');
@@ -477,10 +438,7 @@ export async function connectToHRMonitor(onHeartRate, onDisconnect, onReconnecti
     return false;
   }
 
-  let fullyConnected = false;
-  let disconnectTimer = null;
-
-  device.addEventListener('gattserverdisconnected', () => {
+  function onGattDisconnected() {
     if (!fullyConnected) return;
     clearTimeout(disconnectTimer);
     disconnectTimer = setTimeout(async () => {
@@ -494,7 +452,9 @@ export async function connectToHRMonitor(onHeartRate, onDisconnect, onReconnecti
         onDisconnect?.();
       }
     }, 3000);
-  });
+  }
+
+  device.addEventListener('gattserverdisconnected', onGattDisconnected);
 
   const MAX_ATTEMPTS = 3;
   let lastErr;
@@ -515,6 +475,7 @@ export async function connectToHRMonitor(onHeartRate, onDisconnect, onReconnecti
         disconnect() {
           clearTimeout(disconnectTimer);
           fullyConnected = false;
+          device.removeEventListener('gattserverdisconnected', onGattDisconnected);
           if (device.gatt.connected) device.gatt.disconnect();
         },
       };
@@ -525,5 +486,6 @@ export async function connectToHRMonitor(onHeartRate, onDisconnect, onReconnecti
     }
   }
 
+  device.removeEventListener('gattserverdisconnected', onGattDisconnected);
   throw lastErr;
 }

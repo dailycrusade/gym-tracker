@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
-import { connectToMachine, connectToHRMonitor, MACHINE_TYPES } from '../lib/bluetooth';
+import { connectToMachine, reconnectToMachine, connectToHRMonitor, MACHINE_TYPES } from '../lib/bluetooth';
 import { supabase } from '../lib/supabase';
 import { machineName } from '../lib/utils';
+import { SESSION_WORKOUT_KEY } from '../lib/session';
 import Footer from './Footer';
 
 const INITIAL_METRICS = {
@@ -60,13 +61,18 @@ function MetricCard({ label, value, unit, accent = false, className = '', valueC
   );
 }
 
-export default function BluetoothTest({ athlete, onLogout, onWorkoutDone }) {
+export default function BluetoothTest({ athlete, restoredWorkout = null, onLogout, onWorkoutDone }) {
+  const isRestored = restoredWorkout != null;
+
   // ── Machine connection state ───────────────────────────────────────────────
-  const [status, setStatus] = useState('disconnected'); // disconnected | connecting | connected | reconnecting
-  const [activeMachine, setActiveMachine] = useState(null);
+  const [status, setStatus] = useState(isRestored ? 'reconnecting' : 'disconnected');
+  const [activeMachine, setActiveMachine] = useState(restoredWorkout?.machine ?? null);
   const [deviceName, setDeviceName] = useState('');
   const [metrics, setMetrics] = useState(INITIAL_METRICS);
-  const [elapsed, setElapsed] = useState(0);
+  const [elapsed, setElapsed] = useState(() => {
+    if (!isRestored) return 0;
+    return Math.max(0, Math.floor((Date.now() - new Date(restoredWorkout.startedAt).getTime()) / 1000));
+  });
   const [error, setError] = useState(null);
   const [saveState, setSaveState] = useState(null); // null | 'saving' | 'saved' | 'error'
 
@@ -77,13 +83,47 @@ export default function BluetoothTest({ athlete, onLogout, onWorkoutDone }) {
   // ── Refs ──────────────────────────────────────────────────────────────────
   const connRef = useRef(null);
   const timerRef = useRef(null);
-  const resetElapsedRef = useRef(true);
+  // false when restoring: don't reset elapsed on reconnect; true when fresh: reset to 0 on first connect.
+  const resetElapsedRef = useRef(!isRestored);
   const wattsHistoryRef = useRef([]);
   const cadenceHistoryRef = useRef([]);
   const hrHistoryRef = useRef([]);
-  const workoutStartRef = useRef(null);
-  const workoutIdRef = useRef(null);
+  const workoutStartRef = useRef(restoredWorkout?.startedAt ?? null);
+  const workoutIdRef = useRef(restoredWorkout?.workoutId ?? null);
   const hrConnRef = useRef(null);
+
+  // ── Auto-reconnect on mount when restoring a session ─────────────────────
+  useEffect(() => {
+    if (!isRestored) return;
+    let cancelled = false;
+
+    reconnectToMachine(
+      restoredWorkout.machine,
+      (newMetrics) => {
+        if (cancelled) return;
+        setStatus((s) => (s === 'reconnecting' ? 'connected' : s));
+        setMetrics((prev) => ({ ...prev, ...newMetrics }));
+        if (newMetrics.watts != null) wattsHistoryRef.current.push(newMetrics.watts);
+        const cad = newMetrics.cadence ?? newMetrics.strokeRate;
+        if (cad != null) cadenceHistoryRef.current.push(cad);
+      },
+      () => { if (!cancelled) resetState(); },
+      () => { if (!cancelled) setStatus('reconnecting'); },
+    )
+      .then((conn) => {
+        if (cancelled) { conn.disconnect(); return; }
+        connRef.current = conn;
+        setDeviceName(conn.deviceName);
+        setStatus('connected');
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        console.warn('[BluetoothTest] Auto-reconnect failed:', err.message);
+        setStatus('disconnected');
+      });
+
+    return () => { cancelled = true; };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Elapsed-time timer ────────────────────────────────────────────────────
   useEffect(() => {
@@ -97,7 +137,10 @@ export default function BluetoothTest({ athlete, onLogout, onWorkoutDone }) {
       timerRef.current = setInterval(() => setElapsed((s) => s + 1), 1000);
     } else {
       clearInterval(timerRef.current);
-      resetElapsedRef.current = true;
+      // Only mark elapsed for reset when there's no active workout (workoutId cleared).
+      if (workoutIdRef.current === null) {
+        resetElapsedRef.current = true;
+      }
     }
     return () => clearInterval(timerRef.current);
   }, [status]);
@@ -118,6 +161,7 @@ export default function BluetoothTest({ athlete, onLogout, onWorkoutDone }) {
       supabase.from('workouts').update({ cancelled: true }).eq('id', workoutIdRef.current);
       workoutIdRef.current = null;
     }
+    sessionStorage.removeItem(SESSION_WORKOUT_KEY);
     setStatus('disconnected');
     setMetrics(INITIAL_METRICS);
     setActiveMachine(null);
@@ -131,6 +175,9 @@ export default function BluetoothTest({ athlete, onLogout, onWorkoutDone }) {
     hrHistoryRef.current = [];
   }
 
+  // Cancel the restored workout and return to the fresh-connect idle screen.
+  const handleCancelWorkout = resetState;
+
   function handleLogout() {
     connRef.current?.disconnect();
     hrConnRef.current?.disconnect();
@@ -138,6 +185,7 @@ export default function BluetoothTest({ athlete, onLogout, onWorkoutDone }) {
       supabase.from('workouts').update({ cancelled: true }).eq('id', workoutIdRef.current);
       workoutIdRef.current = null;
     }
+    sessionStorage.removeItem(SESSION_WORKOUT_KEY);
     resetState();
     onLogout();
   }
@@ -174,10 +222,48 @@ export default function BluetoothTest({ athlete, onLogout, onWorkoutDone }) {
         .select('id')
         .single();
       workoutIdRef.current = newWorkout?.id ?? null;
+
+      // Persist session so a page refresh can restore this workout.
+      if (workoutIdRef.current) {
+        sessionStorage.setItem(SESSION_WORKOUT_KEY, JSON.stringify({
+          workoutId: workoutIdRef.current,
+          machine: machineType,
+          athleteId: athlete.id,
+          startedAt: workoutStartRef.current,
+        }));
+      }
     } catch (err) {
       setStatus('disconnected');
       if (err.name !== 'NotFoundError' && err.name !== 'AbortError') {
         setError(err.message ?? 'Connection failed');
+      }
+    }
+  }
+
+  // Retry auto-reconnect after it failed on mount (no device picker, no new workout row).
+  async function handleManualReconnect() {
+    setError(null);
+    setStatus('connecting');
+    try {
+      const conn = await reconnectToMachine(
+        activeMachine,
+        (newMetrics) => {
+          setStatus((s) => (s === 'reconnecting' ? 'connected' : s));
+          setMetrics((prev) => ({ ...prev, ...newMetrics }));
+          if (newMetrics.watts != null) wattsHistoryRef.current.push(newMetrics.watts);
+          const cad = newMetrics.cadence ?? newMetrics.strokeRate;
+          if (cad != null) cadenceHistoryRef.current.push(cad);
+        },
+        resetState,
+        () => setStatus('reconnecting'),
+      );
+      connRef.current = conn;
+      setDeviceName(conn.deviceName);
+      setStatus('connected');
+    } catch (err) {
+      setStatus('disconnected');
+      if (err.name !== 'NotFoundError' && err.name !== 'AbortError') {
+        setError(err.message ?? 'Reconnect failed');
       }
     }
   }
@@ -237,6 +323,7 @@ export default function BluetoothTest({ athlete, onLogout, onWorkoutDone }) {
 
     connRef.current?.disconnect();
     connRef.current = null;
+    sessionStorage.removeItem(SESSION_WORKOUT_KEY);
     setSaveState('saving');
 
     try {
@@ -409,20 +496,44 @@ export default function BluetoothTest({ athlete, onLogout, onWorkoutDone }) {
       {/* ── Connect buttons (idle screen) ── */}
       {!isConnected && !isConnecting && !isReconnecting && (
         <div className="flex-1 min-h-0 flex flex-col sm:flex-row gap-4 justify-center items-center">
-          <button
-            onClick={() => handleConnect(MACHINE_TYPES.ECHO_BIKE)}
-            className="w-full sm:w-auto bg-blue-700 hover:bg-blue-600 active:scale-95 text-white font-bold rounded-2xl transition-all shadow-xl px-8 py-5"
-            style={{ fontSize: 'clamp(1.125rem, 3vh, 1.875rem)' }}
-          >
-            Connect Echo Bike
-          </button>
-          <button
-            onClick={() => handleConnect(MACHINE_TYPES.SKI_ERG)}
-            className="w-full sm:w-auto bg-violet-700 hover:bg-violet-600 active:scale-95 text-white font-bold rounded-2xl transition-all shadow-xl px-8 py-5"
-            style={{ fontSize: 'clamp(1.125rem, 3vh, 1.875rem)' }}
-          >
-            Connect Ski Erg
-          </button>
+          {activeMachine !== null ? (
+            // Restored session: auto-reconnect failed — offer retry or cancel.
+            <>
+              <button
+                onClick={handleManualReconnect}
+                className="w-full sm:w-auto bg-blue-700 hover:bg-blue-600 active:scale-95 text-white font-bold rounded-2xl transition-all shadow-xl px-8 py-5"
+                style={{ fontSize: 'clamp(1.125rem, 3vh, 1.875rem)' }}
+              >
+                Reconnect to {machineName(activeMachine)}
+              </button>
+              <button
+                onClick={handleCancelWorkout}
+                className="w-full sm:w-auto bg-gray-700 hover:bg-gray-600 active:scale-95 text-white font-bold rounded-2xl transition-all shadow-xl px-8 py-5"
+                style={{ fontSize: 'clamp(1.125rem, 3vh, 1.875rem)' }}
+              >
+                Cancel Workout
+              </button>
+            </>
+          ) : (
+            // Fresh session: choose a machine.
+            <>
+              <button
+                onClick={() => handleConnect(MACHINE_TYPES.ECHO_BIKE)}
+                className="w-full sm:w-auto bg-blue-700 hover:bg-blue-600 active:scale-95 text-white font-bold rounded-2xl transition-all shadow-xl px-8 py-5"
+                style={{ fontSize: 'clamp(1.125rem, 3vh, 1.875rem)' }}
+              >
+                Connect Echo Bike
+              </button>
+              <button
+                onClick={() => handleConnect(MACHINE_TYPES.SKI_ERG)}
+                className="w-full sm:w-auto bg-violet-700 hover:bg-violet-600 active:scale-95 text-white font-bold rounded-2xl transition-all shadow-xl px-8 py-5"
+                style={{ fontSize: 'clamp(1.125rem, 3vh, 1.875rem)' }}
+              >
+                Connect Ski Erg
+              </button>
+            </>
+          )}
+
           <button
             onClick={handleConnectHR}
             disabled={hrStatus !== 'disconnected'}
@@ -436,7 +547,7 @@ export default function BluetoothTest({ athlete, onLogout, onWorkoutDone }) {
             style={{ fontSize: 'clamp(1.125rem, 3vh, 1.875rem)' }}
           >
             {hrStatus === 'connecting'   ? 'Connecting HR…' :
-             hrStatus !== 'disconnected' ? `❤ HR Connected` :
+             hrStatus !== 'disconnected' ? '❤ HR Connected' :
                                           'Connect HR Monitor'}
           </button>
 
@@ -451,9 +562,7 @@ export default function BluetoothTest({ athlete, onLogout, onWorkoutDone }) {
 
       {/* ── Metrics grid — fills all remaining height when machine is active ── */}
       {(isConnected || isConnecting || isReconnecting) && (
-        <div className={`flex-1 min-h-0 grid gap-3 ${
-          showHrTile ? 'grid-cols-2 md:grid-cols-3' : 'grid-cols-2 md:grid-cols-3'
-        }`}>
+        <div className="flex-1 min-h-0 grid grid-cols-2 md:grid-cols-3 gap-3">
           <MetricCard label="Power"        value={metrics.watts}   unit="watts" accent />
           <MetricCard label={cadenceLabel} value={cadenceValue}    unit={cadenceUnit} />
           <MetricCard label="Distance"     value={metrics.distance} unit="m" />
