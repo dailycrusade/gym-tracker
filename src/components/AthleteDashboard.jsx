@@ -319,6 +319,9 @@ function WorkoutCard({ workout, color, onDelete }) {
           {stats?.max_watts != null && (
             <Stat label="Max power" value={`${stats.max_watts} W`} />
           )}
+          {stats?.avg_hr != null && (
+            <Stat label="❤ Avg HR" value={`${stats.avg_hr} bpm`} />
+          )}
         </div>
       </div>
 

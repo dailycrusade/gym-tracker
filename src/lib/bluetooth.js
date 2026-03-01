@@ -15,9 +15,17 @@ const FTMS_SERVICE = 0x1826;
 const CHAR_INDOOR_BIKE_DATA = 0x2ad2;   // Echo Bike
 const CHAR_ROWING_MACHINE_DATA = 0x2ad1; // Ski Erg
 
+const HR_SERVICE = 0x180d;
+const CHAR_HR_MEASUREMENT = 0x2a37;
+
 export const MACHINE_TYPES = {
   ECHO_BIKE: 'echo_bike',
   SKI_ERG: 'ski_erg',
+};
+
+export const DEVICE_TYPES = {
+  ...MACHINE_TYPES,
+  HR_MONITOR: 'hr_monitor',
 };
 
 // ---------------------------------------------------------------------------
@@ -370,6 +378,150 @@ export async function connectToMachine(machineType, onMetrics, onDisconnect, onR
         console.log('[bluetooth] Waiting 1 s before next attempt…');
         await sleep(1000);
       }
+    }
+  }
+
+  throw lastErr;
+}
+
+// ---------------------------------------------------------------------------
+// Heart Rate Measurement (0x2A37) parser
+// BLE HR spec: first byte is flags.
+//   bit 0 = 0 → HR value is uint8 in byte 1
+//   bit 0 = 1 → HR value is uint16 in bytes 1-2 (little-endian)
+// ---------------------------------------------------------------------------
+function parseHRMeasurement(dataView) {
+  const flags = dataView.getUint8(0);
+  return (flags & 0x01)
+    ? dataView.getUint16(1, true)
+    : dataView.getUint8(1);
+}
+
+// ---------------------------------------------------------------------------
+// connectToHRMonitor
+//
+// Opens the browser Bluetooth device picker for a Heart Rate Service (0x180D)
+// device, subscribes to Heart Rate Measurement notifications, and returns a
+// disconnect handle.  Mirrors the reconnect logic used for machine connections.
+//
+// @param {function} onHeartRate   - Called with bpm (number) on every reading
+// @param {function} onDisconnect  - Called after all reconnect attempts fail
+// @param {function} onReconnecting - Called when a transient disconnect is detected
+// @returns {Promise<{ deviceName: string, disconnect: function }>}
+// ---------------------------------------------------------------------------
+export async function connectToHRMonitor(onHeartRate, onDisconnect, onReconnecting) {
+  if (!navigator.bluetooth) {
+    throw new Error(
+      'Web Bluetooth is not supported. Use Chrome or Edge, and serve over HTTPS (or localhost).'
+    );
+  }
+
+  let device;
+  try {
+    console.log('[bluetooth/HR] Requesting device with strict HR service filter (0x180D)…');
+    device = await navigator.bluetooth.requestDevice({
+      filters: [{ services: [HR_SERVICE] }],
+    });
+    console.log('[bluetooth/HR] Device selected via strict filter:', device.name);
+  } catch (strictErr) {
+    console.warn('[bluetooth/HR] Strict HR filter failed:', strictErr.message);
+    console.log('[bluetooth/HR] Retrying with acceptAllDevices + optionalServices…');
+    device = await navigator.bluetooth.requestDevice({
+      acceptAllDevices: true,
+      optionalServices: [HR_SERVICE, CHAR_HR_MEASUREMENT],
+    });
+    console.log('[bluetooth/HR] Device selected via fallback picker:', device.name);
+  }
+
+  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  function handleNotification(event) {
+    try {
+      const bpm = parseHRMeasurement(event.target.value);
+      console.log('[bluetooth/HR] BPM:', bpm);
+      onHeartRate(bpm);
+    } catch (err) {
+      console.warn('[bluetooth/HR] Failed to parse HR measurement:', err);
+    }
+  }
+
+  async function subscribeToHR(service) {
+    const char = await service.getCharacteristic(CHAR_HR_MEASUREMENT);
+    char.addEventListener('characteristicvaluechanged', handleNotification);
+    try {
+      await char.startNotifications();
+    } catch (notifyErr) {
+      console.warn('[bluetooth/HR] startNotifications() failed, retrying in 1 s…', notifyErr.message);
+      await sleep(1000);
+      await char.startNotifications();
+    }
+    console.log('[bluetooth/HR] HR notifications started.');
+  }
+
+  async function attemptSilentReconnect() {
+    for (let i = 1; i <= 3; i++) {
+      try {
+        console.log(`[bluetooth/HR] Silent reconnect attempt ${i}/3…`);
+        const server = await device.gatt.connect();
+        await sleep(1000);
+        if (!server.connected) throw new Error('GATT dropped immediately after reconnect');
+        const service = await server.getPrimaryService(HR_SERVICE);
+        await subscribeToHR(service);
+        console.log('[bluetooth/HR] Silent reconnect successful.');
+        return true;
+      } catch (err) {
+        console.warn(`[bluetooth/HR] Silent reconnect ${i}/3 failed:`, err.message);
+        if (i < 3) await sleep(1000);
+      }
+    }
+    return false;
+  }
+
+  let fullyConnected = false;
+  let disconnectTimer = null;
+
+  device.addEventListener('gattserverdisconnected', () => {
+    if (!fullyConnected) return;
+    clearTimeout(disconnectTimer);
+    disconnectTimer = setTimeout(async () => {
+      if (device.gatt.connected) return;
+      console.log('[bluetooth/HR] Still disconnected after 3 s — attempting silent reconnect…');
+      onReconnecting?.();
+      const reconnected = await attemptSilentReconnect();
+      if (!reconnected) {
+        console.warn('[bluetooth/HR] All reconnect attempts failed.');
+        fullyConnected = false;
+        onDisconnect?.();
+      }
+    }, 3000);
+  });
+
+  const MAX_ATTEMPTS = 3;
+  let lastErr;
+
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      console.log(`[bluetooth/HR] GATT connect attempt ${attempt}/${MAX_ATTEMPTS}…`);
+      let server = await device.gatt.connect();
+      await sleep(1000);
+      if (!server.connected) {
+        server = await device.gatt.connect();
+      }
+      const service = await server.getPrimaryService(HR_SERVICE);
+      await subscribeToHR(service);
+      fullyConnected = true;
+      return {
+        deviceName: device.name ?? 'HR Monitor',
+        disconnect() {
+          clearTimeout(disconnectTimer);
+          fullyConnected = false;
+          if (device.gatt.connected) device.gatt.disconnect();
+        },
+      };
+    } catch (err) {
+      lastErr = err;
+      console.warn(`[bluetooth/HR] Attempt ${attempt} failed:`, err.message);
+      if (attempt < MAX_ATTEMPTS) await sleep(1000);
     }
   }
 
