@@ -44,10 +44,10 @@ export default function Login() {
         {/* Logo / wordmark */}
         <div className="mb-8 text-center">
           <span className="text-3xl font-bold tracking-tight" style={{ color: '#7B68EE' }}>
-            Gym
+            Miller's
           </span>
           <span className="text-3xl font-bold tracking-tight" style={{ color: '#6DD5D5' }}>
-            Tracker
+            {' '}Garage
           </span>
         </div>
 
