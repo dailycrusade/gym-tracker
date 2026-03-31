@@ -1,1 +1,29 @@
 @import "tailwindcss";
+
+@theme {
+  --color-mg-purple: #7B68EE;
+  --color-mg-teal: #6DD5D5;
+  --color-mg-cream: #F5F0E8;
+  --color-mg-black: #0D0D0D;
+  --color-mg-surface: #1A1A2E;
+  --color-mg-border: #2A2A4A;
+
+  --font-display: 'Georgia', serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+}
+
+@layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  html, body {
+    background-color: var(--color-mg-black);
+    color: var(--color-mg-cream);
+    font-family: var(--font-body);
+  }
+}
