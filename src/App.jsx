@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import Hub from './components/Hub';
 import AthleteLogin from './components/AthleteLogin';
 import AthleteDashboard from './components/AthleteDashboard';
@@ -7,6 +7,7 @@ import BluetoothTest from './components/BluetoothTest';
 import Leaderboard from './components/Leaderboard';
 import MachineDisplay from './components/MachineDisplay';
 import ProtectedRoute from './components/ProtectedRoute';
+import AppShell from './components/AppShell';
 import Login from './pages/Login';
 import { useAuth } from './context/AuthContext';
 import { supabase } from './lib/supabase';
@@ -122,14 +123,36 @@ function LoginRoute() {
   return <Login />;
 }
 
+function ShellLayout() {
+  return (
+    <ProtectedRoute>
+      <AppShell>
+        <Outlet />
+      </AppShell>
+    </ProtectedRoute>
+  );
+}
+
+function ProfilePlaceholder() {
+  return (
+    <div className="flex h-full min-h-screen items-center justify-center bg-mg-black">
+      <p className="text-mg-cream/60 text-sm">Profile coming in M06</p>
+    </div>
+  );
+}
+
 export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<LoginRoute />} />
-      <Route path="/" element={<ProtectedRoute><Hub /></ProtectedRoute>} />
-      <Route path="/athlete" element={<ProtectedRoute><MainFlow /></ProtectedRoute>} />
-      <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
       <Route path="/display/:machine" element={<ProtectedRoute><MachineDisplay /></ProtectedRoute>} />
+      <Route element={<ShellLayout />}>
+        <Route path="/" element={<Hub />} />
+        <Route path="/athlete" element={<MainFlow />} />
+        <Route path="/leaderboard" element={<Leaderboard />} />
+        <Route path="/profile" element={<ProfilePlaceholder />} />
+      </Route>
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
