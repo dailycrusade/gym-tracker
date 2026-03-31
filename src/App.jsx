@@ -1,11 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import Hub from './components/Hub';
 import AthleteLogin from './components/AthleteLogin';
 import AthleteDashboard from './components/AthleteDashboard';
 import BluetoothTest from './components/BluetoothTest';
 import Leaderboard from './components/Leaderboard';
 import MachineDisplay from './components/MachineDisplay';
+import ProtectedRoute from './components/ProtectedRoute';
+import Login from './pages/Login';
+import { useAuth } from './context/AuthContext';
 import { supabase } from './lib/supabase';
 import { SESSION_ATHLETE_KEY, SESSION_WORKOUT_KEY } from './lib/session';
 
@@ -112,13 +115,21 @@ function MainFlow() {
   );
 }
 
+function LoginRoute() {
+  const { user, loading } = useAuth();
+  if (loading) return null;
+  if (user) return <Navigate to="/" replace />;
+  return <Login />;
+}
+
 export default function App() {
   return (
     <Routes>
-      <Route path="/" element={<Hub />} />
-      <Route path="/athlete" element={<MainFlow />} />
-      <Route path="/leaderboard" element={<Leaderboard />} />
-      <Route path="/display/:machine" element={<MachineDisplay />} />
+      <Route path="/login" element={<LoginRoute />} />
+      <Route path="/" element={<ProtectedRoute><Hub /></ProtectedRoute>} />
+      <Route path="/athlete" element={<ProtectedRoute><MainFlow /></ProtectedRoute>} />
+      <Route path="/leaderboard" element={<ProtectedRoute><Leaderboard /></ProtectedRoute>} />
+      <Route path="/display/:machine" element={<ProtectedRoute><MachineDisplay /></ProtectedRoute>} />
     </Routes>
   );
 }
