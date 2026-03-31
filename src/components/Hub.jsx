@@ -201,14 +201,10 @@ export default function Hub() {
   return (
     <div className="min-h-screen bg-gray-950 text-white flex flex-col">
 
-      {/* ── Top bar ── */}
-      <div className="bg-gray-900 border-b border-gray-800 px-4 sm:px-8 py-3 sm:py-5 flex flex-col sm:grid sm:grid-cols-3 items-center gap-1 sm:gap-0">
-        <h1 className="text-xl sm:text-3xl font-black tracking-tight">Miller's Garage</h1>
-        <div className="flex flex-col items-center">
-          <p className="text-3xl sm:text-5xl font-bold tabular-nums leading-none">{timeStr}</p>
-          <p className="text-gray-400 text-sm sm:text-lg mt-1 sm:mt-2">{dateStr}</p>
-        </div>
-        <div className="hidden sm:block" />
+      {/* ── Clock ── */}
+      <div className="flex flex-col items-center py-4">
+        <p className="text-3xl sm:text-5xl font-bold tabular-nums leading-none">{timeStr}</p>
+        <p className="text-gray-400 text-sm sm:text-lg mt-1">{dateStr}</p>
       </div>
 
       {loading ? (
