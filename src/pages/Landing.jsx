@@ -130,6 +130,126 @@ export default function Landing() {
         </div>
       </section>
 
+      {/* ── MEMBERSHIP TIERS ────────────────────────────────────── */}
+      <section className="bg-mg-black border-t border-mg-border px-6 py-20">
+        <div className="max-w-4xl mx-auto space-y-12">
+
+          {/* Header */}
+          <div>
+            <p className="text-mg-purple text-xs tracking-widest uppercase mb-4">Membership</p>
+            <h2 className="font-display text-3xl sm:text-4xl font-bold text-mg-cream leading-snug">
+              Support the mission.<br />Be part of something.
+            </h2>
+            <p className="mt-4 text-mg-cream/50 text-base leading-relaxed max-w-xl">
+              Membership funds the free community layer. Tiers are still being
+              finalized — ranges reflect where we're landing.
+            </p>
+          </div>
+
+          {/* Cards */}
+          <div className="grid sm:grid-cols-3 gap-6">
+
+            {/* Founding / Community */}
+            <div className="relative flex flex-col rounded-2xl border border-mg-border bg-mg-surface p-6 gap-5">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="text-mg-cream/50 text-xs uppercase tracking-widest mb-1">Founding</p>
+                  <h3 className="text-mg-cream text-xl font-semibold">Community</h3>
+                </div>
+                <span className="shrink-0 rounded-full border border-mg-teal/40 text-mg-teal text-xs px-2.5 py-0.5 font-medium">
+                  Limited
+                </span>
+              </div>
+
+              <div>
+                <p className="text-mg-cream text-2xl font-bold">$49–65<span className="text-mg-cream/40 text-base font-normal">/mo</span></p>
+                <p className="text-mg-cream/40 text-sm mt-0.5">$490–650 / year</p>
+              </div>
+
+              <p className="text-mg-cream/60 text-sm leading-relaxed flex-1">
+                Build the founding crew. Get in early and help shape what this becomes.
+              </p>
+
+              <a
+                href="#contact"
+                className="mt-auto block text-center rounded-xl border border-mg-border text-mg-cream/70 hover:text-mg-cream hover:border-mg-cream/30 transition-colors text-sm font-medium py-2.5"
+              >
+                Get in touch
+              </a>
+            </div>
+
+            {/* Core — most popular */}
+            <div className="relative flex flex-col rounded-2xl border-2 border-mg-purple bg-mg-surface p-6 gap-5 shadow-[0_0_32px_-4px_rgba(123,104,238,0.25)]">
+              <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
+                <span className="rounded-full bg-mg-purple text-white text-xs px-3 py-1 font-semibold whitespace-nowrap">
+                  Most popular
+                </span>
+              </div>
+
+              <div className="flex items-start justify-between gap-2 pt-2">
+                <div>
+                  <p className="text-mg-purple text-xs uppercase tracking-widest mb-1">Core</p>
+                  <h3 className="text-mg-cream text-xl font-semibold">Core ★</h3>
+                </div>
+              </div>
+
+              <div>
+                <p className="text-mg-cream text-2xl font-bold">$85–110<span className="text-mg-cream/40 text-base font-normal">/mo</span></p>
+                <p className="text-mg-cream/40 text-sm mt-0.5">$850–1,100 / year</p>
+              </div>
+
+              <p className="text-mg-cream/60 text-sm leading-relaxed flex-1">
+                Primary membership. Full access, full community.
+              </p>
+
+              <a
+                href="#contact"
+                className="mt-auto block text-center rounded-xl bg-mg-purple hover:opacity-90 active:scale-95 transition text-white text-sm font-semibold py-2.5"
+              >
+                Get in touch
+              </a>
+            </div>
+
+            {/* Legacy / VIP */}
+            <div className="relative flex flex-col rounded-2xl border border-mg-border bg-mg-surface p-6 gap-5">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <p className="text-mg-cream/50 text-xs uppercase tracking-widest mb-1">Legacy</p>
+                  <h3 className="text-mg-cream text-xl font-semibold">VIP</h3>
+                </div>
+                <span className="shrink-0 rounded-full border border-mg-purple/40 text-mg-purple text-xs px-2.5 py-0.5 font-medium">
+                  Anchor
+                </span>
+              </div>
+
+              <div>
+                <p className="text-mg-cream text-2xl font-bold">$150–200<span className="text-mg-cream/40 text-base font-normal">/mo</span></p>
+                <p className="text-mg-cream/40 text-sm mt-0.5">$1,500–2,000 / year</p>
+              </div>
+
+              <p className="text-mg-cream/60 text-sm leading-relaxed flex-1">
+                For those who want to go all in. Anchor the mission at its foundation.
+              </p>
+
+              <a
+                href="#contact"
+                className="mt-auto block text-center rounded-xl border border-mg-border text-mg-cream/70 hover:text-mg-cream hover:border-mg-cream/30 transition-colors text-sm font-medium py-2.5"
+              >
+                Get in touch
+              </a>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* ── CONTACT PLACEHOLDER ─────────────────────────────────── */}
+      <section id="contact" className="bg-mg-surface border-t border-mg-border px-6 py-20">
+        <div className="max-w-2xl mx-auto text-center">
+          <p className="text-mg-cream/30 text-sm">Contact section coming soon.</p>
+        </div>
+      </section>
+
     </div>
   )
 }
