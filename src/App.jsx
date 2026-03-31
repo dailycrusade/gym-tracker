@@ -9,6 +9,7 @@ import MachineDisplay from './components/MachineDisplay';
 import ProtectedRoute from './components/ProtectedRoute';
 import AppShell from './components/AppShell';
 import Login from './pages/Login';
+import Landing from './pages/Landing';
 import { useAuth } from './context/AuthContext';
 import { supabase } from './lib/supabase';
 import { SESSION_ATHLETE_KEY, SESSION_WORKOUT_KEY } from './lib/session';
@@ -144,10 +145,11 @@ function ProfilePlaceholder() {
 export default function App() {
   return (
     <Routes>
+      <Route path="/" element={<Landing />} />
       <Route path="/login" element={<LoginRoute />} />
       <Route path="/display/:machine" element={<ProtectedRoute><MachineDisplay /></ProtectedRoute>} />
       <Route element={<ShellLayout />}>
-        <Route path="/" element={<Hub />} />
+        <Route path="/hub" element={<Hub />} />
         <Route path="/athlete" element={<MainFlow />} />
         <Route path="/leaderboard" element={<Leaderboard />} />
         <Route path="/profile" element={<ProfilePlaceholder />} />
