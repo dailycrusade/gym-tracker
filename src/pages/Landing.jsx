@@ -1,4 +1,44 @@
+import { useState, useEffect } from 'react'
+import { supabase } from '../lib/supabase'
+
+function usePublicEvents() {
+  const [events, setEvents] = useState(null) // null = loading
+  const [empty, setEmpty]   = useState(false)
+
+  useEffect(() => {
+    async function fetch() {
+      try {
+        const { data, error } = await supabase
+          .from('events')
+          .select('id, name, event_date, description')
+          .eq('is_public', true)
+          .order('event_date', { ascending: true })
+          .limit(10)
+
+        // Table missing or any error → treat as empty
+        if (error || !data || data.length === 0) {
+          setEmpty(true)
+        } else {
+          setEvents(data)
+        }
+      } catch {
+        setEmpty(true)
+      }
+    }
+    fetch()
+  }, [])
+
+  return { events, empty }
+}
+
+function fmtDate(iso) {
+  return new Intl.DateTimeFormat('en-US', {
+    weekday: 'short', month: 'long', day: 'numeric', year: 'numeric',
+  }).format(new Date(iso))
+}
+
 export default function Landing() {
+  const { events, empty } = usePublicEvents()
   return (
     <div className="bg-mg-black text-mg-cream font-body min-h-screen">
 
@@ -240,6 +280,64 @@ export default function Landing() {
             </div>
 
           </div>
+        </div>
+      </section>
+
+      {/* ── EVENTS ──────────────────────────────────────────────── */}
+      <section className="bg-mg-black border-t border-mg-border px-6 py-20">
+        <div className="max-w-2xl mx-auto space-y-10">
+
+          <div>
+            <p className="text-mg-teal text-xs tracking-widest uppercase mb-4">What's coming</p>
+            <h2 className="font-display text-3xl sm:text-4xl font-bold text-mg-cream leading-snug">
+              Open events
+            </h2>
+          </div>
+
+          {/* Loading */}
+          {events === null && !empty && (
+            <div className="space-y-4">
+              {[1, 2, 3].map((n) => (
+                <div key={n} className="rounded-2xl border border-mg-border bg-mg-surface p-5 animate-pulse space-y-3">
+                  <div className="h-3 w-1/3 rounded bg-mg-border" />
+                  <div className="h-5 w-2/3 rounded bg-mg-border" />
+                  <div className="h-3 w-full rounded bg-mg-border" />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Empty / table missing */}
+          {empty && (
+            <div className="rounded-2xl border border-mg-border bg-mg-surface px-6 py-10 text-center space-y-2">
+              <p className="text-mg-cream/70 text-base">Events coming soon.</p>
+              <p className="text-mg-cream/40 text-sm">
+                Check back or{' '}
+                <a href="#contact" className="text-mg-teal underline underline-offset-2 hover:opacity-80">
+                  get in touch
+                </a>
+                .
+              </p>
+            </div>
+          )}
+
+          {/* Events list */}
+          {events && (
+            <div className="space-y-4">
+              {events.map((ev) => (
+                <div key={ev.id} className="rounded-2xl border border-mg-border bg-mg-surface p-5 space-y-1.5">
+                  <p className="text-mg-teal text-xs uppercase tracking-widest">
+                    {fmtDate(ev.event_date)}
+                  </p>
+                  <h3 className="text-mg-cream text-lg font-semibold">{ev.name}</h3>
+                  {ev.description && (
+                    <p className="text-mg-cream/50 text-sm leading-relaxed">{ev.description}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
         </div>
       </section>
 
