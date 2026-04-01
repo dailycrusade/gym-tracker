@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
+import WorkoutHistory from '../components/WorkoutHistory'
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -606,7 +607,11 @@ export default function Profile() {
         </p>
       </div>
 
-      {/* ── 5. Sign Out ───────────────────────────────────────────────────── */}
+      {/* ── 5. Workout History ────────────────────────────────────────────── */}
+      {/* TODO M07: replace hardcoded ID once auth→SugarWOD mapping is built */}
+      <WorkoutHistory athleteId="1hsjkmEDx8" />
+
+      {/* ── 6. Sign Out ───────────────────────────────────────────────────── */}
       <button
         onClick={handleSignOut}
         className="w-full rounded-2xl border py-3.5 text-sm font-semibold transition-colors hover:bg-red-500/10 active:scale-[0.98]"

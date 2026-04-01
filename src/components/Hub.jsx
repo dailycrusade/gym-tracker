@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { machineName } from '../lib/utils';
 import { calculateCurrentStreak } from '../lib/streaks';
 import Footer from './Footer';
+import TodaysWod from './TodaysWod';
 
 const TZ = 'America/Chicago';
 
@@ -205,6 +206,11 @@ export default function Hub() {
       <div className="flex flex-col items-center py-4">
         <p className="text-3xl sm:text-5xl font-bold tabular-nums leading-none">{timeStr}</p>
         <p className="text-gray-400 text-sm sm:text-lg mt-1">{dateStr}</p>
+      </div>
+
+      {/* ── Today's WOD ── */}
+      <div className="px-4 sm:px-6 lg:px-8 pb-2">
+        <TodaysWod />
       </div>
 
       {loading ? (
