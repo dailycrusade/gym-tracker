@@ -1,5 +1,7 @@
+import { useState, useEffect } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import { supabase } from '../lib/supabase'
 
 const NAV_ITEMS = [
   {
@@ -48,13 +50,32 @@ const NAV_ITEMS = [
   },
 ]
 
-function getInitials(email) {
-  if (!email) return '?'
-  return email[0].toUpperCase()
+function getInitials(displayName, email) {
+  if (displayName) return displayName.trim()[0].toUpperCase()
+  if (email) return email[0].toUpperCase()
+  return '?'
 }
 
 export default function AppShell({ children }) {
   const { user } = useAuth()
+  const [avatarUrl, setAvatarUrl] = useState(null)
+  const [displayName, setDisplayName] = useState(null)
+  const [imgFailed, setImgFailed] = useState(false)
+
+  useEffect(() => {
+    if (!user) return
+    supabase
+      .from('profiles')
+      .select('avatar_url, display_name')
+      .eq('id', user.id)
+      .single()
+      .then(({ data }) => {
+        if (data) {
+          setAvatarUrl(data.avatar_url ?? null)
+          setDisplayName(data.display_name ?? null)
+        }
+      })
+  }, [user])
 
   return (
     <div className="flex flex-col min-h-screen bg-mg-black">
@@ -65,9 +86,20 @@ export default function AppShell({ children }) {
           <span className="text-mg-teal"> Garage</span>
         </span>
 
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-mg-purple/20 text-mg-purple text-sm font-semibold select-none">
-          {getInitials(user?.email)}
-        </div>
+        <NavLink to="/profile" className="block h-8 w-8 rounded-full overflow-hidden shrink-0">
+          {avatarUrl && !imgFailed ? (
+            <img
+              src={avatarUrl}
+              alt="Profile"
+              className="h-full w-full object-cover"
+              onError={() => setImgFailed(true)}
+            />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center rounded-full bg-mg-purple/20 text-mg-purple text-sm font-semibold select-none">
+              {getInitials(displayName, user?.email)}
+            </div>
+          )}
+        </NavLink>
       </header>
 
       {/* Scrollable content */}
