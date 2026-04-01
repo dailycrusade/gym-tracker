@@ -10,9 +10,9 @@ function usePublicEvents() {
       try {
         const { data, error } = await supabase
           .from('events')
-          .select('id, name, event_date, description')
+          .select('id, title, starts_at, description')
           .eq('is_public', true)
-          .order('event_date', { ascending: true })
+          .order('starts_at', { ascending: true })
           .limit(10)
 
         if (error || !data || data.length === 0) {
@@ -352,9 +352,9 @@ export default function Landing() {
               {events.map((ev) => (
                 <div key={ev.id} className="rounded-2xl border border-mg-border bg-mg-surface p-5 space-y-1.5">
                   <p className="text-mg-teal text-xs uppercase tracking-widest">
-                    {fmtDate(ev.event_date)}
+                    {fmtDate(ev.starts_at)}
                   </p>
-                  <h3 className="text-mg-cream text-lg font-semibold">{ev.name}</h3>
+                  <h3 className="text-mg-cream text-lg font-semibold">{ev.title}</h3>
                   {ev.description && (
                     <p className="text-mg-cream/50 text-sm leading-relaxed">{ev.description}</p>
                   )}
