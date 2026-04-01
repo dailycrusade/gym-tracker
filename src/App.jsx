@@ -10,6 +10,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import AppShell from './components/AppShell';
 import Login from './pages/Login';
 import Landing from './pages/Landing';
+import Profile from './pages/Profile';
 import { useAuth } from './context/AuthContext';
 import { supabase } from './lib/supabase';
 import { SESSION_ATHLETE_KEY, SESSION_WORKOUT_KEY } from './lib/session';
@@ -134,14 +135,6 @@ function ShellLayout() {
   );
 }
 
-function ProfilePlaceholder() {
-  return (
-    <div className="flex h-full min-h-screen items-center justify-center bg-mg-black">
-      <p className="text-mg-cream/60 text-sm">Profile coming in M06</p>
-    </div>
-  );
-}
-
 export default function App() {
   return (
     <Routes>
@@ -152,7 +145,7 @@ export default function App() {
         <Route path="/hub" element={<Hub />} />
         <Route path="/athlete" element={<MainFlow />} />
         <Route path="/leaderboard" element={<Leaderboard />} />
-        <Route path="/profile" element={<ProfilePlaceholder />} />
+        <Route path="/profile" element={<Profile />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
