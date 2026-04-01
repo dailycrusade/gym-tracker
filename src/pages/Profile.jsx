@@ -142,6 +142,13 @@ export default function Profile() {
 
   const [toast, setToast] = useState(null)
 
+  // Avatar upload
+  const [avatarUrl, setAvatarUrl] = useState(null)
+  const [avatarUploading, setAvatarUploading] = useState(false)
+  const [avatarError, setAvatarError] = useState(null)
+  const [avatarImgFailed, setAvatarImgFailed] = useState(false)
+  const fileInputRef = useRef(null)
+
   // Debounce refs
   const prefsTimer = useRef(null)
   const notifsTimer = useRef(null)
@@ -160,6 +167,7 @@ export default function Profile() {
         setError(error.message)
       } else {
         setProfile(data)
+        setAvatarUrl(data.avatar_url ?? null)
         setPrefs({ ...DEFAULT_PREFS, ...(data.preferences ?? {}) })
         setNotifs({ ...DEFAULT_NOTIFS, ...(data.notification_settings ?? {}) })
       }
@@ -219,6 +227,54 @@ export default function Profile() {
     }
   }
 
+  // ── Avatar upload ──────────────────────────────────────────────────────────
+  async function handleAvatarFile(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    // Reset so the same file can be re-selected after an error
+    e.target.value = ''
+
+    setAvatarError(null)
+
+    if (!file.type.startsWith('image/')) {
+      setAvatarError('Please choose an image file.')
+      return
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      setAvatarError('Image must be 2 MB or smaller.')
+      return
+    }
+
+    const ext = file.name.split('.').pop() || 'jpg'
+    const path = `${user.id}/avatar.${ext}`
+
+    setAvatarUploading(true)
+    setAvatarImgFailed(false)
+
+    const { error: uploadError } = await supabase.storage
+      .from('avatars')
+      .upload(path, file, { upsert: true })
+
+    if (uploadError) {
+      setAvatarError(uploadError.message)
+      setAvatarUploading(false)
+      return
+    }
+
+    const { data: urlData } = supabase.storage.from('avatars').getPublicUrl(path)
+    const publicUrl = `${urlData.publicUrl}?t=${Date.now()}`
+
+    await supabase
+      .from('profiles')
+      .update({ avatar_url: publicUrl })
+      .eq('id', user.id)
+
+    setAvatarUrl(publicUrl)
+    setProfile(p => ({ ...p, avatar_url: publicUrl }))
+    setAvatarUploading(false)
+    setToast('Avatar updated')
+  }
+
   // ── Sign out ───────────────────────────────────────────────────────────────
   async function handleSignOut() {
     await supabase.auth.signOut()
@@ -262,23 +318,68 @@ export default function Profile() {
       >
         {/* Avatar */}
         <div className="relative">
-          <div
-            className="w-20 h-20 rounded-full flex items-center justify-center text-2xl font-bold select-none"
-            style={{ background: 'var(--color-mg-purple)', color: 'white' }}
+          {/* Hidden file input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleAvatarFile}
+          />
+
+          {/* Circle — image or initials */}
+          <button
+            type="button"
+            onClick={() => !avatarUploading && fileInputRef.current?.click()}
+            className="relative w-20 h-20 rounded-full overflow-hidden focus:outline-none group"
+            aria-label="Change avatar"
           >
-            {initials}
-          </div>
-          {/* Camera overlay — coming soon */}
-          <div
-            className="absolute inset-0 rounded-full flex flex-col items-center justify-center opacity-0 hover:opacity-100 transition-opacity cursor-not-allowed"
-            style={{ background: 'rgba(0,0,0,0.55)' }}
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
-              <circle cx="12" cy="13" r="4" />
-            </svg>
-            <span className="text-[9px] text-white/70 mt-1 font-medium">Coming soon</span>
-          </div>
+            {avatarUrl && !avatarImgFailed ? (
+              <img
+                src={avatarUrl}
+                alt="Avatar"
+                className="w-full h-full object-cover"
+                onError={() => setAvatarImgFailed(true)}
+              />
+            ) : (
+              <div
+                className="w-full h-full flex items-center justify-center text-2xl font-bold select-none"
+                style={{ background: 'var(--color-mg-purple)', color: 'white' }}
+              >
+                {initials}
+              </div>
+            )}
+
+            {/* Upload spinner overlay */}
+            {avatarUploading ? (
+              <div
+                className="absolute inset-0 flex items-center justify-center rounded-full"
+                style={{ background: 'rgba(0,0,0,0.6)' }}
+              >
+                <svg className="animate-spin" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
+                  <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" strokeLinecap="round" />
+                </svg>
+              </div>
+            ) : (
+              /* Camera overlay on hover */
+              <div
+                className="absolute inset-0 flex flex-col items-center justify-center rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                style={{ background: 'rgba(0,0,0,0.55)' }}
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                  <circle cx="12" cy="13" r="4" />
+                </svg>
+              </div>
+            )}
+          </button>
+
+          {/* Inline validation error */}
+          {avatarError && (
+            <p className="absolute top-full mt-1.5 left-1/2 -translate-x-1/2 whitespace-nowrap text-[11px] text-red-400">
+              {avatarError}
+            </p>
+          )}
         </div>
 
         {/* Display name (tappable to edit) */}
