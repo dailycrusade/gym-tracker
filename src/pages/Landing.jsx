@@ -47,6 +47,13 @@ const NAV_LINKS = [
 export default function Landing() {
   const { events, empty } = usePublicEvents()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [authed, setAuthed] = useState(false)
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setAuthed(!!session)
+    })
+  }, [])
 
   return (
     <div className="bg-mg-black text-mg-cream font-body min-h-screen">
@@ -72,12 +79,21 @@ export default function Landing() {
                 {label}
               </a>
             ))}
-            <Link
-              to="/login"
-              className="rounded-full border border-mg-purple px-4 py-1 text-sm font-medium text-mg-purple transition-colors hover:bg-mg-purple hover:text-white"
-            >
-              Sign In
-            </Link>
+            {authed ? (
+              <Link
+                to="/hub"
+                className="rounded-full border border-mg-teal px-4 py-1 text-sm font-medium text-mg-teal transition-colors hover:bg-mg-teal hover:text-mg-black"
+              >
+                Go to App
+              </Link>
+            ) : (
+              <Link
+                to="/login"
+                className="rounded-full border border-mg-purple px-4 py-1 text-sm font-medium text-mg-purple transition-colors hover:bg-mg-purple hover:text-white"
+              >
+                Sign In
+              </Link>
+            )}
           </div>
 
           {/* Mobile hamburger */}
@@ -105,13 +121,23 @@ export default function Landing() {
                 {label}
               </a>
             ))}
-            <Link
-              to="/login"
-              onClick={() => setMenuOpen(false)}
-              className="self-start rounded-full border border-mg-purple px-4 py-1.5 text-sm font-medium text-mg-purple transition-colors hover:bg-mg-purple hover:text-white"
-            >
-              Sign In
-            </Link>
+            {authed ? (
+              <Link
+                to="/hub"
+                onClick={() => setMenuOpen(false)}
+                className="self-start rounded-full border border-mg-teal px-4 py-1.5 text-sm font-medium text-mg-teal transition-colors hover:bg-mg-teal hover:text-mg-black"
+              >
+                Go to App
+              </Link>
+            ) : (
+              <Link
+                to="/login"
+                onClick={() => setMenuOpen(false)}
+                className="self-start rounded-full border border-mg-purple px-4 py-1.5 text-sm font-medium text-mg-purple transition-colors hover:bg-mg-purple hover:text-white"
+              >
+                Sign In
+              </Link>
+            )}
           </div>
         )}
       </nav>
