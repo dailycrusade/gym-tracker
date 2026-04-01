@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 
 function usePublicEvents() {
@@ -60,7 +61,7 @@ export default function Landing() {
             <span className="text-mg-teal"> Garage</span>
           </a>
 
-          {/* Desktop links */}
+          {/* Desktop links + Sign In */}
           <div className="hidden sm:flex items-center gap-6">
             {NAV_LINKS.map(({ label, href }) => (
               <a
@@ -71,6 +72,12 @@ export default function Landing() {
                 {label}
               </a>
             ))}
+            <Link
+              to="/login"
+              className="rounded-full border border-mg-purple px-4 py-1 text-sm font-medium text-mg-purple transition-colors hover:bg-mg-purple hover:text-white"
+            >
+              Sign In
+            </Link>
           </div>
 
           {/* Mobile hamburger */}
@@ -98,6 +105,13 @@ export default function Landing() {
                 {label}
               </a>
             ))}
+            <Link
+              to="/login"
+              onClick={() => setMenuOpen(false)}
+              className="self-start rounded-full border border-mg-purple px-4 py-1.5 text-sm font-medium text-mg-purple transition-colors hover:bg-mg-purple hover:text-white"
+            >
+              Sign In
+            </Link>
           </div>
         )}
       </nav>
