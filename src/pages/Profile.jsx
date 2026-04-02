@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../context/AuthContext'
 import WorkoutHistory from '../components/WorkoutHistory'
+import { useSugarWodIdentity } from '../hooks/useSugarWodIdentity'
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -127,6 +128,7 @@ function NotificationRow({ label, description, checked, onChange }) {
 export default function Profile() {
   const { user } = useAuth()
   const navigate = useNavigate()
+  const { sugarwodAthleteId, loading: identityLoading, matched } = useSugarWodIdentity()
 
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -608,8 +610,23 @@ export default function Profile() {
       </div>
 
       {/* ── 5. Workout History ────────────────────────────────────────────── */}
-      {/* TODO M07: replace hardcoded ID once auth→SugarWOD mapping is built */}
-      <WorkoutHistory athleteId="1hsjkmEDx8" />
+      {identityLoading ? (
+        <SkeletonCard lines={4} />
+      ) : matched === false ? (
+        <div
+          className="rounded-2xl border p-5"
+          style={{ background: 'var(--color-mg-surface)', borderColor: 'var(--color-mg-border)' }}
+        >
+          <h2 className="text-sm font-semibold tracking-wide uppercase mb-3" style={{ color: 'rgba(245,240,232,0.5)' }}>
+            Workout History
+          </h2>
+          <p className="text-sm" style={{ color: 'var(--color-mg-teal)' }}>
+            Connect your SugarWOD account to see your workout history.
+          </p>
+        </div>
+      ) : (
+        <WorkoutHistory athleteId={sugarwodAthleteId} />
+      )}
 
       {/* ── 6. Sign Out ───────────────────────────────────────────────────── */}
       <button
