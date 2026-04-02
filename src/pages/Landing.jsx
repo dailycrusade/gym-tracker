@@ -143,7 +143,7 @@ export default function Landing() {
       </nav>
 
       {/* ── HERO ────────────────────────────────────────────────── */}
-      <section className="flex flex-col justify-center min-h-screen px-6 pt-28 pb-20 max-w-2xl mx-auto">
+      <section className="relative flex flex-col justify-center min-h-[75vh] px-6 pt-28 pb-20 max-w-2xl mx-auto">
 
         <div className="mb-6">
           <h1 className="font-display text-5xl sm:text-7xl font-bold leading-tight">
@@ -192,6 +192,18 @@ export default function Landing() {
             <path d="M8 4v16M2 14l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </div>
+        {/* Scroll indicator */}
+        <div className="absolute bottom-6 inset-x-0 flex justify-center pointer-events-none">
+          <svg
+            width="24" height="24" viewBox="0 0 24 24"
+            fill="none" stroke="currentColor" strokeWidth="1.5"
+            strokeLinecap="round" strokeLinejoin="round"
+            className="text-mg-teal animate-bounce"
+          >
+            <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
+
       </section>
 
       {/* ── STORY / MISSION ─────────────────────────────────────── */}
