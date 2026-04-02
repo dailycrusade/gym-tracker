@@ -6,7 +6,7 @@ import { supabase } from '../lib/supabase'
 const NAV_ITEMS = [
   {
     label: 'Home',
-    to: '/',
+    to: '/hub',
     end: true,
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
