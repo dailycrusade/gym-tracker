@@ -182,7 +182,14 @@ export default function Landing() {
           </p>
         </div>
 
-        <div className="mt-16 flex flex-col items-start gap-1">
+        <a
+          href="#contact"
+          className="mt-8 inline-block rounded-full border border-mg-teal px-6 py-2 text-sm font-medium text-mg-teal transition-colors hover:bg-mg-teal hover:text-mg-black"
+        >
+          Get in touch
+        </a>
+
+        <div className="mt-10 flex flex-col items-start gap-1">
           <span className="text-mg-cream/30 text-xs tracking-widest uppercase">The idea</span>
           <svg
             width="16" height="24" viewBox="0 0 16 24"
