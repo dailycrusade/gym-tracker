@@ -95,6 +95,9 @@ export default function TodaysWod() {
         <p className="text-sm" style={{ color: 'var(--color-mg-teal)' }}>
           No workout programmed for today — check back soon.
         </p>
+        <p className="text-xs mt-2" style={{ color: 'rgba(245,240,232,0.35)' }}>
+          Workouts are programmed via SugarWOD. Make sure your account is linked.
+        </p>
       ) : (
         <div className="space-y-3">
           {/* Title + type badge */}

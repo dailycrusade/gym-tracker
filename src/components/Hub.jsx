@@ -227,7 +227,10 @@ export default function Hub() {
             <div className="bg-gray-900 rounded-2xl p-6">
               <PanelHeader title="Active Sessions" />
               {active.length === 0 ? (
-                <p className="text-gray-600 text-xl py-2">No active sessions</p>
+                <div>
+                  <p className="text-gray-600 text-xl py-2">No active sessions</p>
+                  <p className="text-gray-700 text-sm mt-1">Start a workout on the Echo Bike or Ski Erg to see your session here.</p>
+                </div>
               ) : (
                 <div className="flex flex-col gap-5">
                   {active.map((w) => (
@@ -348,6 +351,9 @@ export default function Hub() {
                 </div>
 
               </div>
+              {distanceTop3.length === 0 && powerTop3.length === 0 && peakPowerTop3.length === 0 && streakTop3.length === 0 && (
+                <p className="text-gray-700 text-sm mt-4">Stats appear after your first connected device session.</p>
+              )}
             </div>
           </div>
 
@@ -355,7 +361,10 @@ export default function Hub() {
           <div className="bg-gray-900 rounded-2xl p-6">
             <PanelHeader title="Recent Activity" />
             {recent.length === 0 ? (
-              <p className="text-gray-600 text-xl py-2">No workouts yet</p>
+              <div>
+                <p className="text-gray-600 text-xl py-2">No workouts yet</p>
+                <p className="text-gray-700 text-sm mt-1">Your workout history will appear here once you log your first session.</p>
+              </div>
             ) : (
               <div className="flex flex-col gap-3">
                 {recent.map((w) => {

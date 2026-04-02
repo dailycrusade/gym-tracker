@@ -621,7 +621,13 @@ export default function Profile() {
             Workout History
           </h2>
           <p className="text-sm" style={{ color: 'var(--color-mg-teal)' }}>
-            Connect your SugarWOD account to see your workout history.
+            Your workout history links automatically when your SugarWOD email matches your Miller's Garage email.
+          </p>
+          <p className="text-sm mt-2" style={{ color: 'rgba(245,240,232,0.4)' }}>
+            Need help? Reach out to{' '}
+            <a href="mailto:hello@millersgarage.com" style={{ color: 'var(--color-mg-teal)' }}>
+              hello@millersgarage.com
+            </a>
           </p>
         </div>
       ) : (

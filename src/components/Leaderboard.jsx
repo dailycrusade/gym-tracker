@@ -95,7 +95,10 @@ function SectionDivider({ title }) {
 
 function EmptyRows() {
   return (
-    <p className="text-gray-700 text-xl py-6 text-center">No data yet</p>
+    <div className="py-6 text-center">
+      <p className="text-gray-700 text-xl">No data yet</p>
+      <p className="text-gray-800 text-sm mt-2">Stats populate after members complete device sessions. Connect an Echo Bike or Ski Erg during your next workout to appear here.</p>
+    </div>
   );
 }
 
