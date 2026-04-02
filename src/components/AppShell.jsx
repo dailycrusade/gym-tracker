@@ -82,7 +82,7 @@ export default function AppShell({ children }) {
       {/* Top header */}
       <header className="sticky top-0 z-30 flex items-center justify-between px-4 py-3 bg-mg-surface border-b border-mg-border">
         <span className="font-display text-lg font-bold">
-          <span className="text-mg-purple">Millers</span>
+          <span className="text-mg-purple">Miller's</span>
           <span className="text-mg-teal"> Garage</span>
         </span>
 

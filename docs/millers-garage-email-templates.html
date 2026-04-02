@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Miller's Garage — Email Templates Preview</title>
+<style>
+  body { background: #111; color: #ccc; font-family: system-ui, sans-serif; padding: 40px 20px; }
+  h1 { color: #7B68EE; font-family: Georgia, serif; }
+  .template-block { margin: 60px 0; border-top: 2px solid #2A2A4A; padding-top: 40px; }
+  .subject-line { background: #1A1A2E; border: 1px solid #2A2A4A; border-radius: 6px; padding: 12px 16px; margin-bottom: 24px; font-family: monospace; font-size: 13px; color: #6DD5D5; }
+  .subject-label { color: #888; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+  iframe { border: none; width: 100%; height: 500px; border-radius: 8px; }
+</style>
+</head>
+<body>
+<h1>Miller's Garage — Supabase Email Templates</h1>
+<p style="color:#888">Four production-ready templates. Copy the HTML from each section below into Supabase Dashboard → Authentication → Email Templates.</p>
+
+<!-- ============================================================
+     TEMPLATE 1 — CONFIRM SIGNUP
+     ============================================================ -->
+<div class="template-block">
+<h2 style="color:#F5F0E8;font-family:Georgia,serif">1 — Confirm Signup</h2>
+<div class="subject-label">Subject Line</div>
+<div class="subject-line">Welcome to Miller's Garage — confirm your email</div>
+
+<!-- PASTE THIS HTML INTO SUPABASE: Confirm signup template -->
+<!--
+SUBJECT: Welcome to Miller's Garage — confirm your email
+-->
+<div id="t1-html" style="display:none">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Welcome to Miller's Garage</title>
+</head>
+<body style="margin:0;padding:0;background-color:#0D0D0D;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;">
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#0D0D0D;">
+  <tr>
+    <td align="center" style="padding:40px 20px;">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px;width:100%;">
+
+        <!-- TOP ACCENT BAR -->
+        <tr>
+          <td style="background-color:#7B68EE;height:4px;font-size:0;line-height:0;">&nbsp;</td>
+        </tr>
+
+        <!-- HEADER -->
+        <tr>
+          <td align="center" style="background-color:#1A1A2E;padding:36px 40px 28px 40px;border-left:2px solid #2A2A4A;border-right:2px solid #2A2A4A;">
+            <div style="font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:normal;color:#7B68EE;letter-spacing:1px;line-height:1.2;">Miller's Garage</div>
+            <div style="font-family:Arial,Helvetica,sans-serif;font-size:10px;color:#6DD5D5;letter-spacing:3px;text-transform:uppercase;margin-top:6px;">Papillion, Nebraska</div>
+          </td>
+        </tr>
+
+        <!-- DIVIDER -->
+        <tr>
+          <td style="background-color:#1A1A2E;border-left:2px solid #2A2A4A;border-right:2px solid #2A2A4A;padding:0 40px;">
+            <div style="height:1px;background-color:#2A2A4A;font-size:0;line-height:0;">&nbsp;</div>
+          </td>
+        </tr>
+
+        <!-- BODY -->
+        <tr>
+          <td style="background-color:#1A1A2E;padding:36px 40px 40px 40px;border-left:2px solid #2A2A4A;border-right:2px solid #2A2A4A;">
+
+            <h1 style="font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:normal;color:#F5F0E8;margin:0 0 20px 0;line-height:1.3;">You're in.</h1>
+
+            <p style="font-family:Arial,Helvetica,sans-serif;font-size:16px;color:#C8C3B8;line-height:1.7;margin:0 0 32px 0;">Thanks for joining Miller's Garage. Click below to confirm your email and get access to the app.</p>
+
+            <!-- CTA BUTTON -->
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 36px 0;">
+              <tr>
+                <td style="background-color:#7B68EE;border-radius:6px;">
+                  <a href="{{ .ConfirmationURL }}" style="display:inline-block;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;color:#FFFFFF;text-decoration:none;padding:14px 32px;border-radius:6px;letter-spacing:0.5px;">Confirm My Email</a>
+                </td>
+              </tr>
+            </table>
+
+            <p style="font-family:Georgia,'Times New Roman',serif;font-size:14px;color:#888888;font-style:italic;line-height:1.6;margin:0;border-top:1px solid #2A2A4A;padding-top:24px;">Built for community. Rooted in faith. See you in the garage.</p>
+
+          </td>
+        </tr>
+
+        <!-- FOOTER -->
+        <tr>
+          <td align="center" style="background-color:#111827;padding:24px 40px;border:2px solid #2A2A4A;border-top:none;border-radius:0 0 4px 4px;">
+            <p style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#555555;margin:0 0 6px 0;">Miller's Garage &middot; Certago LLC &middot; Papillion, Nebraska</p>
+            <p style="font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#444444;margin:0;">This is a secure automated message.</p>
+          </td>
+        </tr>
+
+      </table>
+    </td>
+  </tr>
+</table>
+</body>
+</html>
+</div>
+
+<p style="color:#6DD5D5;font-size:13px;margin:8px 0 4px">↓ Preview</p>
+<iframe srcdoc='<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Welcome to Miller&#39;s Garage</title></head><body style="margin:0;padding:0;background-color:#0D0D0D;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#0D0D0D;"><tr><td align="center" style="padding:40px 20px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px;width:100%;"><tr><td style="background-color:#7B68EE;height:4px;font-size:0;line-height:0;">&nbsp;</td></tr><tr><td align="center" style="background-color:#1A1A2E;padding:36px 40px 28px 40px;border-left:2px solid #2A2A4A;border-right:2px solid #2A2A4A;"><div style="font-family:Georgia,serif;font-size:28px;color:#7B68EE;letter-spacing:1px;">Miller&#39;s Garage</div><div style="font-family:Arial,sans-serif;font-size:10px;color:#6DD5D5;letter-spacing:3px;text-transform:uppercase;margin-top:6px;">Papillion, Nebraska</div></td></tr><tr><td style="background-color:#1A1A2E;border-left:2px solid #2A2A4A;border-right:2px solid #2A2A4A;padding:0 40px;"><div style="height:1px;background-color:#2A2A4A;">&nbsp;</div></td></tr><tr><td style="background-color:#1A1A2E;padding:36px 40px 40px 40px;border-left:2px solid #2A2A4A;border-right:2px solid #2A2A4A;"><h1 style="font-family:Georgia,serif;font-size:26px;font-weight:normal;color:#F5F0E8;margin:0 0 20px 0;">Youre in.</h1><p style="font-family:Arial,sans-serif;font-size:16px;color:#C8C3B8;line-height:1.7;margin:0 0 32px 0;">Thanks for joining Miller&#39;s Garage. Click below to confirm your email and get access to the app.</p><table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 36px 0;"><tr><td style="background-color:#7B68EE;border-radius:6px;"><a href="#" style="display:inline-block;font-family:Arial,sans-serif;font-size:15px;font-weight:bold;color:#FFFFFF;text-decoration:none;padding:14px 32px;border-radius:6px;letter-spacing:0.5px;">Confirm My Email</a></td></tr></table><p style="font-family:Georgia,serif;font-size:14px;color:#888888;font-style:italic;line-height:1.6;margin:0;border-top:1px solid #2A2A4A;padding-top:24px;">Built for community. Rooted in faith. See you in the garage.</p></td></tr><tr><td align="center" style="background-color:#111827;padding:24px 40px;border:2px solid #2A2A4A;border-top:none;border-radius:0 0 4px 4px;"><p style="font-family:Arial,sans-serif;font-size:12px;color:#555555;margin:0 0 6px 0;">Miller&#39;s Garage &middot; Certago LLC &middot; Papillion, Nebraska</p><p style="font-family:Arial,sans-serif;font-size:11px;color:#444444;margin:0;">This is a secure automated message.</p></td></tr></table></td></tr></table></body></html>'></iframe>
+
+<details style="margin-top:16px">
+<summary style="cursor:pointer;color:#7B68EE;font-size:13px;padding:8px 12px;background:#1A1A2E;border:1px solid #2A2A4A;border-radius:4px;list-style:none">▶ Copy HTML for Supabase (click to expand)</summary>
+<pre style="background:#0D0D0D;border:1px solid #2A2A4A;border-radius:4px;padding:20px;overflow:auto;font-size:11px;color:#C8C3B8;margin-top:8px;line-height:1.5">&lt;!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"&gt;
+&lt;html xmlns="http://www.w3.org/1999/xhtml" lang="en"&gt;
+&lt;head&gt;
+&lt;meta http-equiv="Content-Type" content="text/html; charset=UTF-8"&gt;
+&lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+&lt;title&gt;Welcome to Miller's Garage&lt;/title&gt;
+&lt;/head&gt;
+&lt;body style="margin:0;padding:0;background-color:#0D0D0D;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;"&gt;
+&lt;table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#0D0D0D;"&gt;
+  &lt;tr&gt;
+    &lt;td align="center" style="padding:40px 20px;"&gt;
+      &lt;table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px;width:100%;"&gt;
+        &lt;tr&gt;
+          &lt;td style="background-color:#7B68EE;height:4px;font-size:0;line-height:0;"&gt;&amp;nbsp;&lt;/td&gt;
+        &lt;/tr&gt;
+        &lt;tr&gt;
+          &lt;td align="center" style="background-color:#1A1A2E;padding:36px 40px 28px 40px;border-left:2px solid #2A2A4A;border-right:2px solid #2A2A4A;"&gt;
+            &lt;div style="font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:normal;color:#7B68EE;letter-spacing:1px;line-height:1.2;"&gt;Miller's Garage&lt;/div&gt;
+            &lt;div style="font-family:Arial,Helvetica,sans-serif;font-size:10px;color:#6DD5D5;letter-spacing:3px;text-transform:uppercase;margin-top:6px;"&gt;Papillion, Nebraska&lt;/div&gt;
+          &lt;/td&gt;
+        &lt;/tr&gt;
+        &lt;tr&gt;
+          &lt;td style="background-color:#1A1A2E;border-left:2px solid #2A2A4A;border-right:2px solid #2A2A4A;padding:0 40px;"&gt;
+            &lt;div style="height:1px;background-color:#2A2A4A;font-size:0;line-height:0;"&gt;&amp;nbsp;&lt;/div&gt;
+          &lt;/td&gt;
+        &lt;/tr&gt;
+        &lt;tr&gt;
+          &lt;td style="background-color:#1A1A2E;padding:36px 40px 40px 40px;border-left:2px solid #2A2A4A;border-right:2px solid #2A2A4A;"&gt;
+            &lt;h1 style="font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:normal;color:#F5F0E8;margin:0 0 20px 0;line-height:1.3;"&gt;You're in.&lt;/h1&gt;
+            &lt;p style="font-family:Arial,Helvetica,sans-serif;font-size:16px;color:#C8C3B8;line-height:1.7;margin:0 0 32px 0;"&gt;Thanks for joining Miller's Garage. Click below to confirm your email and get access to the app.&lt;/p&gt;
+            &lt;table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 36px 0;"&gt;
+              &lt;tr&gt;
+                &lt;td style="background-color:#7B68EE;border-radius:6px;"&gt;
+                  &lt;a href="{{ .ConfirmationURL }}" style="display:inline-block;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;color:#FFFFFF;text-decoration:none;padding:14px 32px;border-radius:6px;letter-spacing:0.5px;"&gt;Confirm My Email&lt;/a&gt;
+                &lt;/td&gt;
+              &lt;/tr&gt;
+            &lt;/table&gt;
+            &lt;p style="font-family:Georgia,'Times New Roman',serif;font-size:14px;color:#888888;font-style:italic;line-height:1.6;margin:0;border-top:1px solid #2A2A4A;padding-top:24px;"&gt;Built for community. Rooted in faith. See you in the garage.&lt;/p&gt;
+          &lt;/td&gt;
+        &lt;/tr&gt;
+        &lt;tr&gt;
+          &lt;td align="center" style="background-color:#111827;padding:24px 40px;border:2px solid #2A2A4A;border-top:none;border-radius:0 0 4px 4px;"&gt;
+            &lt;p style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#555555;margin:0 0 6px 0;"&gt;Miller's Garage &amp;middot; Certago LLC &amp;middot; Papillion, Nebraska&lt;/p&gt;
+            &lt;p style="font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#444444;margin:0;"&gt;This is a secure automated message.&lt;/p&gt;
+          &lt;/td&gt;
+        &lt;/tr&gt;
+      &lt;/table&gt;
+    &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;</pre>
+</details>
+</div>
+
+
+<!-- ============================================================
+     TEMPLATE 2 — MAGIC LINK / PASSWORDLESS LOGIN
+     ============================================================ -->
+<div class="template-block">
+<h2 style="color:#F5F0E8;font-family:Georgia,serif">2 — Magic Link / Passwordless Login</h2>
+<div class="subject-label">Subject Line</div>
+<div class="subject-line">Your Miller's Garage sign-in link</div>
+
+<p style="color:#6DD5D5;font-size:13px;margin:8px 0 4px">↓ Preview</p>
+<iframe srcdoc='<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Sign in to Miller&#39;s Garage</title></head><body style="margin:0;padding:0;background-color:#0D0D0D;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#0D0D0D;"><tr><td align="center" style="padding:40px 20px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px;width:100%;"><tr><td style="background-color:#7B68EE;height:4px;font-size:0;line-height:0;">&nbsp;</td></tr><tr><td align="center" style="background-color:#1A1A2E;padding:36px 40px 28px 40px;border-left:2px solid #2A2A4A;border-right:2px solid #2A2A4A;"><div style="font-family:Georgia,serif;font-size:28px;color:#7B68EE;letter-spacing:1px;">Miller&#39;s Garage</div><div style="font-family:Arial,sans-serif;font-size:10px;color:#6DD5D5;letter-spacing:3px;text-transform:uppercase;margin-top:6px;">Papillion, Nebraska</div></td></tr><tr><td style="background-color:#1A1A2E;border-left:2px solid #2A2A4A;border-right:2px solid #2A2A4A;padding:0 40px;"><div style="height:1px;background-color:#2A2A4A;">&nbsp;</div></td></tr><tr><td style="background-color:#1A1A2E;padding:36px 40px 40px 40px;border-left:2px solid #2A2A4A;border-right:2px solid #2A2A4A;"><h1 style="font-family:Georgia,serif;font-size:26px;font-weight:normal;color:#F5F0E8;margin:0 0 20px 0;">Heres your sign-in link.</h1><p style="font-family:Arial,sans-serif;font-size:16px;color:#C8C3B8;line-height:1.7;margin:0 0 32px 0;">Click below to sign in to Miller&#39;s Garage. This link expires in 1 hour and can only be used once.</p><table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 36px 0;"><tr><td style="background-color:#7B68EE;border-radius:6px;"><a href="#" style="display:inline-block;font-family:Arial,sans-serif;font-size:15px;font-weight:bold;color:#FFFFFF;text-decoration:none;padding:14px 32px;border-radius:6px;letter-spacing:0.5px;">Sign In</a></td></tr></table><p style="font-family:Arial,sans-serif;font-size:13px;color:#888888;line-height:1.6;margin:0;border-top:1px solid #2A2A4A;padding-top:24px;">If you didnt request this, you can safely ignore it.</p></td></tr><tr><td align="center" style="background-color:#111827;padding:24px 40px;border:2px solid #2A2A4A;border-top:none;border-radius:0 0 4px 4px;"><p style="font-family:Arial,sans-serif;font-size:12px;color:#555555;margin:0 0 6px 0;">Miller&#39;s Garage &middot; Certago LLC &middot; Papillion, Nebraska</p><p style="font-family:Arial,sans-serif;font-size:11px;color:#444444;margin:0;">This is a secure automated message.</p></td></tr></table></td></tr></table></body></html>'></iframe>
+
+<details style="margin-top:16px">
+<summary style="cursor:pointer;color:#7B68EE;font-size:13px;padding:8px 12px;background:#1A1A2E;border:1px solid #2A2A4A;border-radius:4px;list-style:none">▶ Copy HTML for Supabase (click to expand)</summary>
+<pre style="background:#0D0D0D;border:1px solid #2A2A4A;border-radius:4px;padding:20px;overflow:auto;font-size:11px;color:#C8C3B8;margin-top:8px;line-height:1.5">&lt;!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"&gt;
+&lt;html xmlns="http://www.w3.org/1999/xhtml" lang="en"&gt;
+&lt;head&gt;
+&lt;meta http-equiv="Content-Type" content="text/html; charset=UTF-8"&gt;
+&lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+&lt;title&gt;Sign in to Miller's Garage&lt;/title&gt;
+&lt;/head&gt;
+&lt;body style="margin:0;padding:0;background-color:#0D0D0D;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;"&gt;
+&lt;table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#0D0D0D;"&gt;
+  &lt;tr&gt;
+    &lt;td align="center" style="padding:40px 20px;"&gt;
+      &lt;table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px;width:100%;"&gt;
+        &lt;tr&gt;
+          &lt;td style="background-color:#7B68EE;height:4px;font-size:0;line-height:0;"&gt;&amp;nbsp;&lt;/td&gt;
+        &lt;/tr&gt;
+        &lt;tr&gt;
+          &lt;td align="center" style="background-color:#1A1A2E;padding:36px 40px 28px 40px;border-left:2px solid #2A2A4A;border-right:2px solid #2A2A4A;"&gt;
+            &lt;div style="font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:normal;color:#7B68EE;letter-spacing:1px;line-height:1.2;"&gt;Miller's Garage&lt;/div&gt;
+            &lt;div style="font-family:Arial,Helvetica,sans-serif;font-size:10px;color:#6DD5D5;letter-spacing:3px;text-transform:uppercase;margin-top:6px;"&gt;Papillion, Nebraska&lt;/div&gt;
+          &lt;/td&gt;
+        &lt;/tr&gt;
+        &lt;tr&gt;
+          &lt;td style="background-color:#1A1A2E;border-left:2px solid #2A2A4A;border-right:2px solid #2A2A4A;padding:0 40px;"&gt;
+            &lt;div style="height:1px;background-color:#2A2A4A;font-size:0;line-height:0;"&gt;&amp;nbsp;&lt;/div&gt;
+          &lt;/td&gt;
+        &lt;/tr&gt;
+        &lt;tr&gt;
+          &lt;td style="background-color:#1A1A2E;padding:36px 40px 40px 40px;border-left:2px solid #2A2A4A;border-right:2px solid #2A2A4A;"&gt;
+            &lt;h1 style="font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:normal;color:#F5F0E8;margin:0 0 20px 0;line-height:1.3;"&gt;Here's your sign-in link.&lt;/h1&gt;
+            &lt;p style="font-family:Arial,Helvetica,sans-serif;font-size:16px;color:#C8C3B8;line-height:1.7;margin:0 0 32px 0;"&gt;Click below to sign in to Miller's Garage. This link expires in 1 hour and can only be used once.&lt;/p&gt;
+            &lt;table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 36px 0;"&gt;
+              &lt;tr&gt;
+                &lt;td style="background-color:#7B68EE;border-radius:6px;"&gt;
+                  &lt;a href="{{ .ConfirmationURL }}" style="display:inline-block;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;color:#FFFFFF;text-decoration:none;padding:14px 32px;border-radius:6px;letter-spacing:0.5px;"&gt;Sign In&lt;/a&gt;
+                &lt;/td&gt;
+              &lt;/tr&gt;
+            &lt;/table&gt;
+            &lt;p style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#888888;line-height:1.6;margin:0;border-top:1px solid #2A2A4A;padding-top:24px;"&gt;If you didn't request this, you can safely ignore it.&lt;/p&gt;
+          &lt;/td&gt;
+        &lt;/tr&gt;
+        &lt;tr&gt;
+          &lt;td align="center" style="background-color:#111827;padding:24px 40px;border:2px solid #2A2A4A;border-top:none;border-radius:0 0 4px 4px;"&gt;
+            &lt;p style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#555555;margin:0 0 6px 0;"&gt;Miller's Garage &amp;middot; Certago LLC &amp;middot; Papillion, Nebraska&lt;/p&gt;
+            &lt;p style="font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#444444;margin:0;"&gt;This is a secure automated message.&lt;/p&gt;
+          &lt;/td&gt;
+        &lt;/tr&gt;
+      &lt;/table&gt;
+    &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;</pre>
+</details>
+</div>
+
+
+<!-- ============================================================
+     TEMPLATE 3 — PASSWORD RESET
+     ============================================================ -->
+<div class="template-block">
+<h2 style="color:#F5F0E8;font-family:Georgia,serif">3 — Password Reset</h2>
+<div class="subject-label">Subject Line</div>
+<div class="subject-line">Reset your Miller's Garage password</div>
+
+<p style="color:#6DD5D5;font-size:13px;margin:8px 0 4px">↓ Preview</p>
+<iframe srcdoc='<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Reset your password</title></head><body style="margin:0;padding:0;background-color:#0D0D0D;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#0D0D0D;"><tr><td align="center" style="padding:40px 20px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px;width:100%;"><tr><td style="background-color:#7B68EE;height:4px;font-size:0;line-height:0;">&nbsp;</td></tr><tr><td align="center" style="background-color:#1A1A2E;padding:36px 40px 28px 40px;border-left:2px solid #2A2A4A;border-right:2px solid #2A2A4A;"><div style="font-family:Georgia,serif;font-size:28px;color:#7B68EE;letter-spacing:1px;">Miller&#39;s Garage</div><div style="font-family:Arial,sans-serif;font-size:10px;color:#6DD5D5;letter-spacing:3px;text-transform:uppercase;margin-top:6px;">Papillion, Nebraska</div></td></tr><tr><td style="background-color:#1A1A2E;border-left:2px solid #2A2A4A;border-right:2px solid #2A2A4A;padding:0 40px;"><div style="height:1px;background-color:#2A2A4A;">&nbsp;</div></td></tr><tr><td style="background-color:#1A1A2E;padding:36px 40px 40px 40px;border-left:2px solid #2A2A4A;border-right:2px solid #2A2A4A;"><h1 style="font-family:Georgia,serif;font-size:26px;font-weight:normal;color:#F5F0E8;margin:0 0 20px 0;">Reset your password.</h1><p style="font-family:Arial,sans-serif;font-size:16px;color:#C8C3B8;line-height:1.7;margin:0 0 32px 0;">We received a request to reset the password on your Miller&#39;s Garage account. Click below to choose a new one.</p><table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 36px 0;"><tr><td style="background-color:#7B68EE;border-radius:6px;"><a href="#" style="display:inline-block;font-family:Arial,sans-serif;font-size:15px;font-weight:bold;color:#FFFFFF;text-decoration:none;padding:14px 32px;border-radius:6px;letter-spacing:0.5px;">Reset My Password</a></td></tr></table><p style="font-family:Arial,sans-serif;font-size:13px;color:#888888;line-height:1.6;margin:0;border-top:1px solid #2A2A4A;padding-top:24px;">If you didnt request a password reset, you can safely ignore this email.</p></td></tr><tr><td align="center" style="background-color:#111827;padding:24px 40px;border:2px solid #2A2A4A;border-top:none;border-radius:0 0 4px 4px;"><p style="font-family:Arial,sans-serif;font-size:12px;color:#555555;margin:0 0 6px 0;">Miller&#39;s Garage &middot; Certago LLC &middot; Papillion, Nebraska</p><p style="font-family:Arial,sans-serif;font-size:11px;color:#444444;margin:0;">This is a secure automated message.</p></td></tr></table></td></tr></table></body></html>'></iframe>
+
+<details style="margin-top:16px">
+<summary style="cursor:pointer;color:#7B68EE;font-size:13px;padding:8px 12px;background:#1A1A2E;border:1px solid #2A2A4A;border-radius:4px;list-style:none">▶ Copy HTML for Supabase (click to expand)</summary>
+<pre style="background:#0D0D0D;border:1px solid #2A2A4A;border-radius:4px;padding:20px;overflow:auto;font-size:11px;color:#C8C3B8;margin-top:8px;line-height:1.5">&lt;!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"&gt;
+&lt;html xmlns="http://www.w3.org/1999/xhtml" lang="en"&gt;
+&lt;head&gt;
+&lt;meta http-equiv="Content-Type" content="text/html; charset=UTF-8"&gt;
+&lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+&lt;title&gt;Reset your Miller's Garage password&lt;/title&gt;
+&lt;/head&gt;
+&lt;body style="margin:0;padding:0;background-color:#0D0D0D;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;"&gt;
+&lt;table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#0D0D0D;"&gt;
+  &lt;tr&gt;
+    &lt;td align="center" style="padding:40px 20px;"&gt;
+      &lt;table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px;width:100%;"&gt;
+        &lt;tr&gt;
+          &lt;td style="background-color:#7B68EE;height:4px;font-size:0;line-height:0;"&gt;&amp;nbsp;&lt;/td&gt;
+        &lt;/tr&gt;
+        &lt;tr&gt;
+          &lt;td align="center" style="background-color:#1A1A2E;padding:36px 40px 28px 40px;border-left:2px solid #2A2A4A;border-right:2px solid #2A2A4A;"&gt;
+            &lt;div style="font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:normal;color:#7B68EE;letter-spacing:1px;line-height:1.2;"&gt;Miller's Garage&lt;/div&gt;
+            &lt;div style="font-family:Arial,Helvetica,sans-serif;font-size:10px;color:#6DD5D5;letter-spacing:3px;text-transform:uppercase;margin-top:6px;"&gt;Papillion, Nebraska&lt;/div&gt;
+          &lt;/td&gt;
+        &lt;/tr&gt;
+        &lt;tr&gt;
+          &lt;td style="background-color:#1A1A2E;border-left:2px solid #2A2A4A;border-right:2px solid #2A2A4A;padding:0 40px;"&gt;
+            &lt;div style="height:1px;background-color:#2A2A4A;font-size:0;line-height:0;"&gt;&amp;nbsp;&lt;/div&gt;
+          &lt;/td&gt;
+        &lt;/tr&gt;
+        &lt;tr&gt;
+          &lt;td style="background-color:#1A1A2E;padding:36px 40px 40px 40px;border-left:2px solid #2A2A4A;border-right:2px solid #2A2A4A;"&gt;
+            &lt;h1 style="font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:normal;color:#F5F0E8;margin:0 0 20px 0;line-height:1.3;"&gt;Reset your password.&lt;/h1&gt;
+            &lt;p style="font-family:Arial,Helvetica,sans-serif;font-size:16px;color:#C8C3B8;line-height:1.7;margin:0 0 32px 0;"&gt;We received a request to reset the password on your Miller's Garage account. Click below to choose a new one.&lt;/p&gt;
+            &lt;table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 36px 0;"&gt;
+              &lt;tr&gt;
+                &lt;td style="background-color:#7B68EE;border-radius:6px;"&gt;
+                  &lt;a href="{{ .ConfirmationURL }}" style="display:inline-block;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;color:#FFFFFF;text-decoration:none;padding:14px 32px;border-radius:6px;letter-spacing:0.5px;"&gt;Reset My Password&lt;/a&gt;
+                &lt;/td&gt;
+              &lt;/tr&gt;
+            &lt;/table&gt;
+            &lt;p style="font-family:Arial,Helvetica,sans-serif;font-size:13px;color:#888888;line-height:1.6;margin:0;border-top:1px solid #2A2A4A;padding-top:24px;"&gt;If you didn't request a password reset, you can safely ignore this email.&lt;/p&gt;
+          &lt;/td&gt;
+        &lt;/tr&gt;
+        &lt;tr&gt;
+          &lt;td align="center" style="background-color:#111827;padding:24px 40px;border:2px solid #2A2A4A;border-top:none;border-radius:0 0 4px 4px;"&gt;
+            &lt;p style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#555555;margin:0 0 6px 0;"&gt;Miller's Garage &amp;middot; Certago LLC &amp;middot; Papillion, Nebraska&lt;/p&gt;
+            &lt;p style="font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#444444;margin:0;"&gt;This is a secure automated message.&lt;/p&gt;
+          &lt;/td&gt;
+        &lt;/tr&gt;
+      &lt;/table&gt;
+    &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;</pre>
+</details>
+</div>
+
+
+<!-- ============================================================
+     TEMPLATE 4 — INVITE
+     ============================================================ -->
+<div class="template-block">
+<h2 style="color:#F5F0E8;font-family:Georgia,serif">4 — Invite (Admin Inviting a New Member)</h2>
+<div class="subject-label">Subject Line</div>
+<div class="subject-line">You've been invited to Miller's Garage</div>
+
+<p style="color:#6DD5D5;font-size:13px;margin:8px 0 4px">↓ Preview</p>
+<iframe srcdoc='<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Youve been invited to Miller&#39;s Garage</title></head><body style="margin:0;padding:0;background-color:#0D0D0D;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#0D0D0D;"><tr><td align="center" style="padding:40px 20px;"><table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px;width:100%;"><tr><td style="background-color:#7B68EE;height:4px;font-size:0;line-height:0;">&nbsp;</td></tr><tr><td align="center" style="background-color:#1A1A2E;padding:36px 40px 28px 40px;border-left:2px solid #2A2A4A;border-right:2px solid #2A2A4A;"><div style="font-family:Georgia,serif;font-size:28px;color:#7B68EE;letter-spacing:1px;">Miller&#39;s Garage</div><div style="font-family:Arial,sans-serif;font-size:10px;color:#6DD5D5;letter-spacing:3px;text-transform:uppercase;margin-top:6px;">Papillion, Nebraska</div></td></tr><tr><td style="background-color:#1A1A2E;border-left:2px solid #2A2A4A;border-right:2px solid #2A2A4A;padding:0 40px;"><div style="height:1px;background-color:#2A2A4A;">&nbsp;</div></td></tr><tr><td style="background-color:#1A1A2E;padding:36px 40px 40px 40px;border-left:2px solid #2A2A4A;border-right:2px solid #2A2A4A;"><h1 style="font-family:Georgia,serif;font-size:26px;font-weight:normal;color:#F5F0E8;margin:0 0 20px 0;">Youve been invited.</h1><p style="font-family:Arial,sans-serif;font-size:16px;color:#C8C3B8;line-height:1.7;margin:0 0 32px 0;">Steve and Andrea Miller have invited you to join Miller&#39;s Garage — a faith-integrated community wellness space in Papillion, Nebraska. Click below to accept your invitation and set up your account.</p><table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 36px 0;"><tr><td style="background-color:#7B68EE;border-radius:6px;"><a href="#" style="display:inline-block;font-family:Arial,sans-serif;font-size:15px;font-weight:bold;color:#FFFFFF;text-decoration:none;padding:14px 32px;border-radius:6px;letter-spacing:0.5px;">Accept Invitation</a></td></tr></table><p style="font-family:Georgia,serif;font-size:14px;color:#888888;font-style:italic;line-height:1.6;margin:0;border-top:1px solid #2A2A4A;padding-top:24px;">Built for community. Rooted in faith. See you in the garage.</p></td></tr><tr><td align="center" style="background-color:#111827;padding:24px 40px;border:2px solid #2A2A4A;border-top:none;border-radius:0 0 4px 4px;"><p style="font-family:Arial,sans-serif;font-size:12px;color:#555555;margin:0 0 6px 0;">Miller&#39;s Garage &middot; Certago LLC &middot; Papillion, Nebraska</p><p style="font-family:Arial,sans-serif;font-size:11px;color:#444444;margin:0;">This is a secure automated message.</p></td></tr></table></td></tr></table></body></html>'></iframe>
+
+<details style="margin-top:16px">
+<summary style="cursor:pointer;color:#7B68EE;font-size:13px;padding:8px 12px;background:#1A1A2E;border:1px solid #2A2A4A;border-radius:4px;list-style:none">▶ Copy HTML for Supabase (click to expand)</summary>
+<pre style="background:#0D0D0D;border:1px solid #2A2A4A;border-radius:4px;padding:20px;overflow:auto;font-size:11px;color:#C8C3B8;margin-top:8px;line-height:1.5">&lt;!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"&gt;
+&lt;html xmlns="http://www.w3.org/1999/xhtml" lang="en"&gt;
+&lt;head&gt;
+&lt;meta http-equiv="Content-Type" content="text/html; charset=UTF-8"&gt;
+&lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
+&lt;title&gt;You've been invited to Miller's Garage&lt;/title&gt;
+&lt;/head&gt;
+&lt;body style="margin:0;padding:0;background-color:#0D0D0D;-webkit-text-size-adjust:100%;-ms-text-size-adjust:100%;"&gt;
+&lt;table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background-color:#0D0D0D;"&gt;
+  &lt;tr&gt;
+    &lt;td align="center" style="padding:40px 20px;"&gt;
+      &lt;table role="presentation" cellpadding="0" cellspacing="0" border="0" width="600" style="max-width:600px;width:100%;"&gt;
+        &lt;tr&gt;
+          &lt;td style="background-color:#7B68EE;height:4px;font-size:0;line-height:0;"&gt;&amp;nbsp;&lt;/td&gt;
+        &lt;/tr&gt;
+        &lt;tr&gt;
+          &lt;td align="center" style="background-color:#1A1A2E;padding:36px 40px 28px 40px;border-left:2px solid #2A2A4A;border-right:2px solid #2A2A4A;"&gt;
+            &lt;div style="font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:normal;color:#7B68EE;letter-spacing:1px;line-height:1.2;"&gt;Miller's Garage&lt;/div&gt;
+            &lt;div style="font-family:Arial,Helvetica,sans-serif;font-size:10px;color:#6DD5D5;letter-spacing:3px;text-transform:uppercase;margin-top:6px;"&gt;Papillion, Nebraska&lt;/div&gt;
+          &lt;/td&gt;
+        &lt;/tr&gt;
+        &lt;tr&gt;
+          &lt;td style="background-color:#1A1A2E;border-left:2px solid #2A2A4A;border-right:2px solid #2A2A4A;padding:0 40px;"&gt;
+            &lt;div style="height:1px;background-color:#2A2A4A;font-size:0;line-height:0;"&gt;&amp;nbsp;&lt;/div&gt;
+          &lt;/td&gt;
+        &lt;/tr&gt;
+        &lt;tr&gt;
+          &lt;td style="background-color:#1A1A2E;padding:36px 40px 40px 40px;border-left:2px solid #2A2A4A;border-right:2px solid #2A2A4A;"&gt;
+            &lt;h1 style="font-family:Georgia,'Times New Roman',serif;font-size:26px;font-weight:normal;color:#F5F0E8;margin:0 0 20px 0;line-height:1.3;"&gt;You've been invited.&lt;/h1&gt;
+            &lt;p style="font-family:Arial,Helvetica,sans-serif;font-size:16px;color:#C8C3B8;line-height:1.7;margin:0 0 32px 0;"&gt;Steve and Andrea Miller have invited you to join Miller's Garage &amp;mdash; a faith-integrated community wellness space in Papillion, Nebraska. Click below to accept your invitation and set up your account.&lt;/p&gt;
+            &lt;table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 36px 0;"&gt;
+              &lt;tr&gt;
+                &lt;td style="background-color:#7B68EE;border-radius:6px;"&gt;
+                  &lt;a href="{{ .ConfirmationURL }}" style="display:inline-block;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;color:#FFFFFF;text-decoration:none;padding:14px 32px;border-radius:6px;letter-spacing:0.5px;"&gt;Accept Invitation&lt;/a&gt;
+                &lt;/td&gt;
+              &lt;/tr&gt;
+            &lt;/table&gt;
+            &lt;p style="font-family:Georgia,'Times New Roman',serif;font-size:14px;color:#888888;font-style:italic;line-height:1.6;margin:0;border-top:1px solid #2A2A4A;padding-top:24px;"&gt;Built for community. Rooted in faith. See you in the garage.&lt;/p&gt;
+          &lt;/td&gt;
+        &lt;/tr&gt;
+        &lt;tr&gt;
+          &lt;td align="center" style="background-color:#111827;padding:24px 40px;border:2px solid #2A2A4A;border-top:none;border-radius:0 0 4px 4px;"&gt;
+            &lt;p style="font-family:Arial,Helvetica,sans-serif;font-size:12px;color:#555555;margin:0 0 6px 0;"&gt;Miller's Garage &amp;middot; Certago LLC &amp;middot; Papillion, Nebraska&lt;/p&gt;
+            &lt;p style="font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#444444;margin:0;"&gt;This is a secure automated message.&lt;/p&gt;
+          &lt;/td&gt;
+        &lt;/tr&gt;
+      &lt;/table&gt;
+    &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;</pre>
+</details>
+</div>
+
+<div style="margin-top:60px;padding:24px;background:#1A1A2E;border:1px solid #2A2A4A;border-radius:6px;font-size:13px;color:#888;">
+  <strong style="color:#6DD5D5;">Supabase Setup Path:</strong> Dashboard → Authentication → Email Templates → select template type → paste subject + HTML → Save<br><br>
+  <strong style="color:#6DD5D5;">{{ .ConfirmationURL }}</strong> is left as-is in every template — Supabase replaces it automatically at send time.<br><br>
+  <strong style="color:#6DD5D5;">Dark mode note:</strong> All four templates use <code style="color:#F5F0E8">#0D0D0D</code> as the body background. Most modern email clients will honor this. Outlook on Windows may render a white background behind the 600px card — the card itself will still display correctly with dark navy.
+</div>
+
+</body>
+</html>
