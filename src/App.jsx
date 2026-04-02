@@ -7,6 +7,7 @@ import AppShell from './components/AppShell';
 import Login from './pages/Login';
 import Landing from './pages/Landing';
 import Profile from './pages/Profile';
+import WorkoutPlaceholder from './pages/WorkoutPlaceholder';
 import { useAuth } from './context/AuthContext';
 
 function LoginRoute() {
@@ -34,6 +35,7 @@ export default function App() {
       <Route path="/display/:machine" element={<ProtectedRoute><MachineDisplay /></ProtectedRoute>} />
       <Route element={<ShellLayout />}>
         <Route path="/hub" element={<Hub />} />
+        <Route path="/workout" element={<WorkoutPlaceholder />} />
         <Route path="/leaderboard" element={<Leaderboard />} />
         <Route path="/profile" element={<Profile />} />
       </Route>

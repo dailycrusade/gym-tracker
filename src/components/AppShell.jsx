@@ -17,7 +17,7 @@ const NAV_ITEMS = [
   },
   {
     label: 'Workout',
-    to: '/athlete',
+    to: '/workout',
     end: false,
     icon: (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
