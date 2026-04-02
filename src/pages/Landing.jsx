@@ -49,6 +49,8 @@ export default function Landing() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [authed, setAuthed] = useState(false)
 
+  useEffect(() => { document.title = "Miller's Garage — Papillion, Nebraska"; }, [])
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setAuthed(!!session)

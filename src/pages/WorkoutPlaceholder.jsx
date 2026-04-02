@@ -1,4 +1,8 @@
+import { useEffect } from 'react'
+
 export default function WorkoutPlaceholder() {
+  useEffect(() => { document.title = "Workout — Miller's Garage"; }, [])
+
   return (
     <div className="max-w-lg mx-auto px-4 py-8">
       <div

@@ -132,6 +132,8 @@ export default function Hub() {
   const [active, setActive]   = useState([]);
   const [weekRows, setWeekRows] = useState([]);
   const [recent, setRecent]   = useState([]);
+
+  useEffect(() => { document.title = "Home — Miller's Garage"; }, []);
   const [loading, setLoading] = useState(true);
 
   // 1-second clock

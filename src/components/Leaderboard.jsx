@@ -215,6 +215,8 @@ export default function Leaderboard() {
   const [period, setPeriod]   = useState('week');
   const [machine, setMachine] = useState('all');
 
+  useEffect(() => { document.title = "Leaderboard — Miller's Garage"; }, []);
+
   useEffect(() => {
     let cancelled = false;
 

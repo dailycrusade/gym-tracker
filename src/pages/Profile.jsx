@@ -130,6 +130,8 @@ export default function Profile() {
   const navigate = useNavigate()
   const { sugarwodAthleteId, loading: identityLoading, matched } = useSugarWodIdentity()
 
+  useEffect(() => { document.title = "Profile — Miller's Garage"; }, [])
+
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
