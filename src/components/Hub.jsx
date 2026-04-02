@@ -192,7 +192,7 @@ export default function Hub() {
 
   // Clock strings
   const timeStr = new Intl.DateTimeFormat('en-US', {
-    timeZone: TZ, hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true,
+    timeZone: TZ, hour: 'numeric', minute: '2-digit', hour12: true,
   }).format(now);
 
   const dateStr = new Intl.DateTimeFormat('en-US', {
@@ -202,15 +202,14 @@ export default function Hub() {
   return (
     <div className="min-h-screen bg-gray-950 text-white flex flex-col">
 
-      {/* ── Clock ── */}
-      <div className="flex flex-col items-center py-4">
-        <p className="text-3xl sm:text-5xl font-bold tabular-nums leading-none">{timeStr}</p>
-        <p className="text-gray-400 text-sm sm:text-lg mt-1">{dateStr}</p>
+      {/* ── Today's WOD ── */}
+      <div className="px-4 sm:px-6 lg:px-8 pt-4 pb-2">
+        <TodaysWod />
       </div>
 
-      {/* ── Today's WOD ── */}
+      {/* ── Clock ── */}
       <div className="px-4 sm:px-6 lg:px-8 pb-2">
-        <TodaysWod />
+        <p className="text-sm tabular-nums text-gray-700">{dateStr} · {timeStr}</p>
       </div>
 
       {loading ? (
